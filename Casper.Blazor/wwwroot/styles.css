@@ -1,0 +1,109 @@
+@font-face {
+    font-family: 'ZX82System' format('woff');
+}
+
+html, body {
+    font-family: 'ZX82System', 'Courier New', 'Courier', 'monospace';
+    margin: 0;
+    height: 100vh;
+}
+
+*, ::before, ::after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.layout-div {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.header-div {
+    display: flex;
+    order: 1;
+    z-index: 1;
+    justify-content: center;
+    align-items: center;
+    color: black;
+    background: whitesmoke;
+    box-shadow: 0 0 5px 0px grey;
+    height: 2em;
+}
+
+.footer-div {
+    display: flex;
+    flex-direction: row;
+    order: 3;
+    z-index: 1;
+    justify-content: center;
+    align-items: center;
+    color: black;
+    background: whitesmoke;
+    box-shadow: 0 0 5px 0px grey;
+    height: 2em;
+}
+
+img.github-mark {
+    content: url("GitHubMark.svg");
+    width: auto;
+}
+
+img.color-bands {
+    content: url("ColorBands.svg");
+    width: auto;
+    height: 100%;
+}
+
+.flex {
+    display: flex;
+    height: 100%;
+}
+
+.footer-text {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.casper-div {
+    flex: 1;
+    order: 2;
+    overflow: hidden;
+}
+
+.casper-svg {
+    display: block;
+    max-height: 100%;
+    width: 100%;
+}
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+img {
+    filter: drop-shadow(0px 3px 3px rgba(0, 0, 0, 0.4));
+    /*transition: all 200ms ease-out;*/
+}
+
+a img:hover {
+    filter: drop-shadow(0px 3px 3px rgba(35, 173, 278, 1));
+}

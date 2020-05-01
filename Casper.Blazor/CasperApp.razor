@@ -1,0 +1,24 @@
+@inject CasperBlazor Spectrum
+
+<Router AppAssembly="@GetType().Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(CasperLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(CasperLayout)">
+            <p>Sorry, there's nothing at this address.</p>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+@code {
+    protected override void OnAfterRender(bool firstRender) {
+        if (firstRender) {
+            if (!Spectrum.Running) {
+                Spectrum.LoadROM(Casper.Shared.Resources.Spectrum);
+                Spectrum.LoadSnapshot(Casper.Shared.Resources.ManicMiner);
+                Spectrum.Running = true;
+            }
+        }
+    }
+}

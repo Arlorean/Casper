@@ -39,17 +39,13 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ManicMiner.z80">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Spectrum.rom">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\Casper.Shared\Casper.Shared.csproj">
+      <Project>{921728e8-364e-4c00-97b8-83f06f2fde23}</Project>
+      <Name>Casper.Shared</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Casper\Casper.csproj">
       <Project>{dc088f77-65a7-4257-b9c1-224a4b75978f}</Project>
-      <Name>Jasper</Name>
+      <Name>Casper</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -1,0 +1,43 @@
+﻿@implements IDisposable
+@inject CasperBlazor Spectrum
+
+<svg class="casper-svg"
+     viewBox="0 0 256 192"
+     shape-rendering="crispEdges"
+     xmlns="http://www.w3.org/2000/svg">
+    @for (var x = 0; x < 256; ++x) {
+        for (var y = 0; y < 192; ++y) {
+            <rect x="@x" y="@y" width="1" height="1" fill="@pixels[x,y]" />
+        }
+    }
+</svg>
+
+@code {
+    string[,] pixels = new string[256, 192];
+    bool screenUpdated;
+
+    static string[] colorStrings = Colors.Palette.Select(c => $"#{c.R:X2}{c.G:X2}{c.B:X2}").ToArray();
+
+    protected override void OnInitialized() {
+        Spectrum.Interrupt += Redraw;
+        Spectrum.Screen.RenderPixel += RenderPixel;
+        Spectrum.RefreshScreen();
+    }
+
+    void IDisposable.Dispose() {
+        Spectrum.Screen.RenderPixel -= RenderPixel;
+        Spectrum.Interrupt -= Redraw;
+    }
+
+    public void RenderPixel(int x, int y, ColorIndex colorIndex) {
+        pixels[x, y] = colorStrings[(int)colorIndex];
+        screenUpdated = true;
+    }
+
+    void Redraw() {
+        if (screenUpdated) {
+            screenUpdated = false;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+}

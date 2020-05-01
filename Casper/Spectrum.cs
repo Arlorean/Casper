@@ -2,6 +2,7 @@
  * @(#)Spectrum.java 1.1 27/04/97 Adam Davidson & Andrew Pollard
  */
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -18,16 +19,10 @@ namespace Casper {
     /// on/off. There is no sound support in this version.
     /// </summary>
     public class Spectrum : Z80 {
-        IDisplay display;
+        public Screen Screen { get; } = new Screen();
 
-        public Spectrum(IDisplay display) : base(3.5) { // Spectrum runs at 3.5Mhz
-            this.display = display;
-
-            resetKeyboard();
-        }
-
-        public void setBorderWidth(int width) {
-            borderWidth = width;
+        public Spectrum() : base(3.5) { // Spectrum runs at 3.5Mhz
+            ResetKeyboard();
         }
 
         /// <summary>
@@ -67,7 +62,8 @@ namespace Casper {
             }
 
             if (mem[addr] != newByte) {
-                plot(addr, newByte);
+                Screen.UpdateByte(addr, (byte)newByte);
+                mem[addr] = newByte;
             }
         }
 
@@ -87,14 +83,14 @@ namespace Casper {
 
             int newByte0 = word & 0xff;
             if (mem[addr] != newByte0) {
-                plot(addr, newByte0);
+                Screen.UpdateByte(addr, (byte)newByte0);
                 mem[addr] = newByte0;
             }
 
             int newByte1 = word >> 8;
             if (++addr != (22528 + 768)) {
                 if (mem[addr] != newByte1) {
-                    plot(addr, newByte1);
+                    Screen.UpdateByte(addr, (byte)newByte1);
                     mem[addr] = newByte1;
                 }
             }
@@ -195,73 +191,13 @@ namespace Casper {
             }
         }
 
-        private void plot(int addr, int newByte) {
-            mem[addr] = newByte;
-            PokeScreenByte(addr, (byte)newByte);
-        }
-
-        public void PokeScreenByte(int address, byte value) {
-            var i = address - 16384;
-            if (i < 6144) {
-                DrawScreenByte(address, value);
-            }
-            else {
-                DrawScreenAttr(address, value);
+        public void RefreshScreen() {
+            for (var addr = 16384; addr < 22528+768; ++addr) {
+                Screen.UpdateByte(addr, (byte)mem[addr]);
             }
         }
 
-        void DrawScreenAttr(int address, byte value) {
-            var i = address - 16384 - 6144;
-            var x = (i % 32);
-            var y = (i / 32);
-            var addr = (0b010 << 13)
-                | ((y & 0b00111) << 5)
-                | ((y & 0b11000) << 8)
-                | (x);
-
-            for (var b = 0; b < 8; b++) {
-                DrawScreenByte(addr, (byte)mem[addr]);
-                addr += 256; // Move to next pixel row
-            }
-        }
-
-        void DrawScreenByte(int address, byte value) {
-            // http://www.zxdesign.info/memoryToScreen.shtml
-            var i = address - 16384;
-            int x = ((i & 0x1f) << 3);
-            int y = ((i & 0x00e0) >> 2)
-                  + ((i & 0x0700) >> 8)
-                  + ((i & 0x1800) >> 5);
-
-            // https://faqwiki.zxnet.co.uk/wiki/Spectrum_Video_Modes
-            int j = 16384 + 6144
-                + (i & 0xff)
-                + ((i & 0x1800) >> 3);
-            var attr = (byte)mem[j];
-
-            for (var b = 0; b < 8; b++) {
-                var pixel = ((value >> b) & 1) == 1;
-                display.RenderPixel(x + (7 - b), y, pixel, attr);
-            }
-        }
-
-        public void borderPaint() {
-            if (oldBorder == newBorder) {
-                return;
-            }
-            oldBorder = newBorder;
-
-            if (borderWidth == 0) {
-                return;
-            }
-
-            //parentGraphics.setColor( brightColors[ newBorder ] );
-            //parentGraphics.fillRect( 0, 0,
-            //	(nPixelsWide*pixelScale) + borderWidth*2,
-            //	(nPixelsHigh*pixelScale) + borderWidth*2 );
-        }
-
-        public void resetKeyboard() {
+        public void ResetKeyboard() {
             for (var i=0; i < 8; ++i) {
                 banks[i] = 0xff;
             }
@@ -282,31 +218,35 @@ namespace Casper {
             }
         }
 
-        public void RefreshWholeScreen() {
-            var addr = 16384 + 6144;
-            for (var i = 0; i < (32 * 24); ++i) {
-                DrawScreenAttr(addr + i, (byte)mem[addr + i]);
+        public Key[] GetKeysPressed() {
+            var pressed = new List<Key>();
+            foreach (Key key in Enum.GetValues(typeof(Key))) {
+                var bank = ((int)key / 5);
+                var bit = 1 << ((int)key % 5);
+                if ((banks[bank] & (byte)(bit)) == 0) {
+                    pressed.Add(key);
+                }
             }
+            return pressed.ToArray();
         }
 
-        public void loadSnapshot(Stream stream, int snapshotLength) {
+        public void LoadSnapshot(byte[] bytes) {
             // Crude check but it'll work (SNA is a fixed size)
-            if ((snapshotLength == 49179)) {
-                loadSNA(stream);
+            if (bytes.Length == 49179) {
+                LoadSNA(bytes);
             }
             else {
-                loadZ80(stream, snapshotLength);
+                LoadZ80(bytes);
             }
-
-            RefreshWholeScreen();
-            resetKeyboard();
         }
 
-        public void loadROM(Stream stream) {
+        public void LoadROM(byte[] bytes) {
+            using var stream = new MemoryStream(bytes);
             readBytes(stream, mem, 0, 16384);
         }
 
-        public void loadSNA(Stream stream) {
+        public void LoadSNA(byte[] bytes) {
+            using var stream = new MemoryStream(bytes);
             int[] header = new int[27];
 
             readBytes(stream, header, 0, 27);
@@ -359,9 +299,15 @@ namespace Casper {
             IFF1(IFF2());
             REFRESH(2);
             poppc();
+
+            ResetKeyboard();
+            RefreshScreen();
         }
 
-        public void loadZ80(Stream stream, int bytesLeft) {
+        public void LoadZ80(byte[] bytes) {
+            using var stream = new MemoryStream(bytes);
+            var bytesLeft = bytes.Length;
+
             int[] header = new int[30];
             bool compressed = false;
 
@@ -432,12 +378,10 @@ namespace Casper {
 
             if (PC() == 0) {
                 loadZ80_extended(stream, bytesLeft);
-                return;
             }
-
-            /* Old format Z80 snapshot */
-
+            else
             if (compressed) {
+                /* Old format Z80 snapshot */
                 int[] data = new int[bytesLeft];
                 int addr = 16384;
 
@@ -472,6 +416,9 @@ namespace Casper {
             else {
                 readBytes(stream, mem, 16384, 49152);
             }
+
+            ResetKeyboard();
+            RefreshScreen();
         }
 
         private void loadZ80_extended(Stream stream, int bytesLeft) {

@@ -1,0 +1,24 @@
+﻿@inherits LayoutComponentBase
+
+<div class="layout-div">
+    <div class="header-div">
+        <b>Blazor ZX Spectrum Emulator</b>
+    </div>
+
+    <div class="footer-div">
+        <div class="flex">
+            <a class="flex" href="https://github.com/Arlorean/Casper">
+                <img class="github-mark" />
+            </a>
+        </div>
+        <div class="footer-text">
+            Written by Adam Davidson and Andrew Pollard
+        </div>
+        <div class="flex">
+            <img class="color-bands" />
+        </div>
+    </div>
+
+    <!-- Put this at the end show the head and foot are rendered first, then flex-order in into place-->
+    <CasperDiv />
+</div>

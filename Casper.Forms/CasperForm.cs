@@ -1,23 +1,24 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
 namespace Casper.Forms {
     [System.ComponentModel.DesignerCategory("")] // Disable Windows Forms Designer in Visual Studio
-    public class JasperForm : Form, IDisplay  {
+    public class CasperForm : Form {
         Spectrum spectrum;
         Graphics graphics;
         Timer interrupt;
         Image image;
 
-        public JasperForm() {
-            spectrum = new Spectrum(this);
+        public CasperForm() {
+            spectrum = new Spectrum();
+            spectrum.Screen.RenderPixel += RenderPixel;
 
             interrupt = new Timer();
             interrupt.Interval = 20; // 20ms is 50 interrupts per second
             interrupt.Tick += Interrupt_Tick;
-            interrupt.Enabled = true;
 
             image = new Bitmap(256, 192);
             graphics = Graphics.FromImage(image);
@@ -26,45 +27,27 @@ namespace Casper.Forms {
             this.Text = "Casper";
             this.ClientSize = image.Size;
 
-            using (var stream = System.IO.File.OpenRead("spectrum.rom")) {
-                spectrum.loadROM(stream);
-            }
-
-            using (var stream = System.IO.File.OpenRead("ManicMiner.z80")) {
-                spectrum.loadSnapshot(stream, (int)stream.Length);
-            }
+            spectrum.LoadROM(Casper.Shared.Resources.Spectrum);
+            spectrum.LoadSnapshot(Casper.Shared.Resources.ManicMiner);
+            interrupt.Enabled = true;
         }
 
         [STAThread]
         static void Main() {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new JasperForm());
+            Application.Run(new CasperForm());
         }
 
-        static readonly Color[] palette = {
-            Color.Black,                 Color.Blue,
-            Color.Red,                   Color.Magenta,
-            Color.Green,                 Color.Cyan,
-            Color.Yellow,                Color.White
-        };
-        static readonly Brush[] brushes = palette.Select(c => new SolidBrush(c)).ToArray();
+        static readonly Brush[] brushes = Colors.Palette.Select(c => new SolidBrush(c)).ToArray();
 
         void Interrupt_Tick(object sender, EventArgs e) {
             spectrum.execute();
             Invalidate();
         }
 
-        public void RenderPixel(int x, int y, bool value, byte attr) {
-            Brush brush;
-            if (value) { // ink
-                var fg = (attr & 0b00000111);
-                brush = brushes[fg];
-            }
-            else { // paper
-                var bg = (attr & 0b00111000) >> 3;
-                brush = brushes[bg];
-            }
+        public void RenderPixel(int x, int y, ColorIndex colorIndex) {
+            var brush = brushes[(int)colorIndex];
 
             var s = 1f;
             var rect = new RectangleF(x * s, y * s, s, s);

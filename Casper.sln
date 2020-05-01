@@ -7,6 +7,36 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Casper", "Casper\Casper.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Casper.Forms", "Casper.Forms\Casper.Forms.csproj", "{C99CCC8A-76D1-42F4-B256-0FC4C00E4638}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Casper.BlazorServer", "Casper.BlazorServer\Casper.BlazorServer.csproj", "{167A6E1B-8279-49E9-83CA-76EDF4B1BB89}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Casper.BlazorWebAssembly", "Casper.BlazorWebAssembly\Casper.BlazorWebAssembly.csproj", "{A2431680-1AEF-47F7-8313-27A8BD03CAE2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Casper.Blazor", "Casper.Blazor\Casper.Blazor.csproj", "{3AF2F049-415D-497E-8712-10AB77C9A4CD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Casper.Shared", "Casper.Shared\Casper.Shared.csproj", "{921728E8-364E-4C00-97B8-83F06F2FDE23}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4FDD7FD4-26E4-4748-B35A-797A2DE47EC7}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{E8449AAB-96D0-4A05-9962-312D577A5F33}"
+	ProjectSection(SolutionItems) = preProject
+		docs\InternetMagazine-March1997-Article.jpg = docs\InternetMagazine-March1997-Article.jpg
+		docs\ManicMiner-BlazorServer.png = docs\ManicMiner-BlazorServer.png
+		docs\ManicMiner-BlazorWebAssembly-InstallApp.png = docs\ManicMiner-BlazorWebAssembly-InstallApp.png
+		docs\ManicMiner-Forms.png = docs\ManicMiner-Forms.png
+		docs\zxspectrum_keyboard.svg = docs\zxspectrum_keyboard.svg
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "keys", "keys", "{5E0BBEC1-A92C-470E-8AC6-7FF0999164FD}"
+	ProjectSection(SolutionItems) = preProject
+		docs\keys\KeyQ.svg = docs\keys\KeyQ.svg
+		docs\keys\KeySPACE.svg = docs\keys\KeySPACE.svg
+		docs\keys\KeyW.svg = docs\keys\KeyW.svg
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,9 +51,29 @@ Global
 		{C99CCC8A-76D1-42F4-B256-0FC4C00E4638}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C99CCC8A-76D1-42F4-B256-0FC4C00E4638}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C99CCC8A-76D1-42F4-B256-0FC4C00E4638}.Release|Any CPU.Build.0 = Release|Any CPU
+		{167A6E1B-8279-49E9-83CA-76EDF4B1BB89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{167A6E1B-8279-49E9-83CA-76EDF4B1BB89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{167A6E1B-8279-49E9-83CA-76EDF4B1BB89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{167A6E1B-8279-49E9-83CA-76EDF4B1BB89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2431680-1AEF-47F7-8313-27A8BD03CAE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2431680-1AEF-47F7-8313-27A8BD03CAE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2431680-1AEF-47F7-8313-27A8BD03CAE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2431680-1AEF-47F7-8313-27A8BD03CAE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AF2F049-415D-497E-8712-10AB77C9A4CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AF2F049-415D-497E-8712-10AB77C9A4CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AF2F049-415D-497E-8712-10AB77C9A4CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AF2F049-415D-497E-8712-10AB77C9A4CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{921728E8-364E-4C00-97B8-83F06F2FDE23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{921728E8-364E-4C00-97B8-83F06F2FDE23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{921728E8-364E-4C00-97B8-83F06F2FDE23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{921728E8-364E-4C00-97B8-83F06F2FDE23}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E8449AAB-96D0-4A05-9962-312D577A5F33} = {4FDD7FD4-26E4-4748-B35A-797A2DE47EC7}
+		{5E0BBEC1-A92C-470E-8AC6-7FF0999164FD} = {E8449AAB-96D0-4A05-9962-312D577A5F33}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9E745363-7AAB-442A-84F4-9CB96F8F46B5}
