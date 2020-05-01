@@ -33,7 +33,7 @@ In Visual Studio, set one of the following projects to be your startup project a
 |:-------------------:|--------|
 |![](docs/keys/KeyQ.svg) | Left   |
 |![](docs/keys/KeyW.svg) | Right   |
-|![](docs/keys/KeySpace.svg) | Jump   |
+|![](docs/keys/KeySPACE.svg) | Jump   |
 
 
 
