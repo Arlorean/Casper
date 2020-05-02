@@ -11,9 +11,11 @@ on [.NET Core 3.1](https://devblogs.microsoft.com/dotnet/announcing-net-core-3-1
 
 ## How to Build
 
-Download or fork this repository and open the `Casper.sln` file in Visual Studio 2019 (version16.5.4 or above).
-You will need to have the **ASP.NET and web development** and **.NET desktop development** workloads installed
-using the Visual Studio Installer.
+Download or fork this repository and open the `Casper.sln` file in Visual Studio 2019 (version 16.5.4 or above).
+You will need to have the following [workloads](https://visualstudio.microsoft.com/vs/#workloads) installed
+using the [Visual Studio Installer](https://docs.microsoft.com/en-us/visualstudio/install/modify-visual-studio?view=vs-2019#modify-workloads):
+- ASP.NET and web development
+- .NET desktop development
 
 ## How to Run
 
@@ -71,19 +73,19 @@ on his [Atari ST](https://en.wikipedia.org/wiki/Atari_ST) because he was disappo
 In **1992** Andrew ported the emulator to C code and we then ported it to [X Windows](https://en.wikipedia.org/wiki/X_Window_System) 
 so we could play [Match Day](https://www.worldofspectrum.org/infoseekid.cgi?id=0003067) where
 each of us played on our own [Sun SparcStation](https://en.wikipedia.org/wiki/SPARCstation_1)
-with the emulator essentially running as a backend server.
+with the emulator essentially running as a back-end server.
 
 In **1996** Sun released their first version of the Java Develop Kit with the tag line *write once, run anywhere*.
-I was completely sold, especially when I saw their Web Browser implemention
+I was completely sold, especially when I saw their Web Browser implementation
 [HotJava](https://en.wikipedia.org/wiki/HotJava) written 100% in Java
 with a new [Java Applet](https://en.wikipedia.org/wiki/Java_applet) model
 for running Java content inside a Web Browser.
-I could see that we could resurrent the emulator and port it to Java.
-Yes it would be slow, since the Java Bytecode was interpretted,
+I could see that we could resurrect the emulator and port it to Java.
+Yes it would be slow, since the Java Bytecode was interpreted,
 but Just-in-Time (JIT) compilation was coming and I knew I couldn't wait.
 
 In **1997** during the [browser wars](https://en.wikipedia.org/wiki/Browser_wars) Netscape and Internet Explorer 
-were both viaing to be the best Web Browser on the market and Java Applet performance
+were both vying to be the best Web Browser on the market and Java Applet performance
 was a differentiator for them. They both came our with JIT support for Java Applets around the same
 time and suddenly the Java Spectrum Emulator (Jasper) got a new lease of life. 
 With JIT it ran in real-time on a 133Mhz Pentium in 16Mb RAM. We even got some
@@ -92,10 +94,10 @@ ran an article on [our website](https://web.archive.org/web/19980210232053/http:
 
 ![](docs/InternetMagazine-March1997-Article.jpg)
 
-In **2019** in a bid to learn about Blazor I decided to ressurect the old emulator
+In **2019** in a bid to learn about Blazor I decided to resurrect the old emulator
 code again and port it to C#. I did a Windows Forms reference first so I could 
 make sure things were working as they should be. Then I moved on to the Blazor
-version. I could see the same story of interpretted byte code initially with the
+version. I could see the same story of interpreted byte code initially with the
 promise of JIT or AOT (Ahead-of-Time) compilation hopefully making the 
 Blazor WebAssembly version run in real-time once again.
 
