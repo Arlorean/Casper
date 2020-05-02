@@ -19,6 +19,8 @@ namespace Casper {
         public void Flash() {
             flashInverted = !flashInverted;
 
+            if (RenderPixel == null) { return; }
+
             for (var cy = 0; cy < 24; cy++) {
                 for (var cx = 0; cx < 32; ++cx) {
                     var attr = colors[cx, cy];
