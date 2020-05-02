@@ -35,9 +35,6 @@ namespace Casper {
         private const int F_Z = 0x40;
         private const int F_S = 0x80;
 
-        private const int PF = F_PV;
-        private const int p_ = 0;
-
         private static readonly bool[] parity = new bool[256];
         static Z80() {
             for (int i = 0; i < 256; i++) {
@@ -4206,7 +4203,6 @@ namespace Casper {
 
         /** Quick Increment : no flags */
         int inc16(int a) { return (a + 1) & 0xffff; }
-        int qinc8(int a) { return (a + 1) & 0xff; }
 
         /** Quick Decrement : no flags */
         int dec16(int a) { return (a - 1) & 0xffff; }
