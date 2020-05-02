@@ -8,9 +8,11 @@ namespace Casper {
     /// http://www.zxdesign.info/memoryToScreen.shtml
     /// </summary>
     public class Screen {
-        byte[,] pixels = new byte[32, 192];
-        byte[,] colors = new byte[32, 24];
+        readonly byte[,] pixels = new byte[32, 192];
+        readonly byte[,] colors = new byte[32, 24];
         bool flashInverted;
+
+        public ColorIndex Border { get; set; }
 
         public event Action<int, int, ColorIndex> RenderPixel;
 
@@ -69,14 +71,13 @@ namespace Casper {
             }
         }
 
-        void UpdateColors(int address, byte newValue) {
+        void UpdateColors(int address, byte attr) {
             var cx = (address & 0b000000_00000_11111);
             var cy = (address & 0b000000_11111_00000) >> 5;
 
-            var oldValue = colors[cx, cy];
-            colors[cx, cy] = newValue;
+            colors[cx, cy] = attr;
 
-            RenderAttr(cx, cy, newValue);
+            RenderAttr(cx, cy, attr);
         }
 
         void RenderAttr(int cx, int cy, byte attr) {

@@ -46,7 +46,7 @@ namespace Casper {
         }
         public override void outb(int port, int outByte, int tstates) {
             if ((port & 0x0001) == 0) {
-                newBorder = (outByte & 0x07);
+                Screen.Border = (ColorIndex)(outByte & 0x07);
             }
         }
 
@@ -100,13 +100,6 @@ namespace Casper {
         }
 
         private int interruptCounter = 0;
-        private bool resetAtNextInterrupt = false;
-        private bool pauseAtNextInterrupt = false;
-        private bool refreshNextInterrupt = true;
-        private bool loadFromURLFieldNextInterrupt = false;
-
-        public long timeOfLastInterrupt = 0;
-        private long timeOfLastSample = 0;
 
         public override int interrupt() {
             interruptCounter++;
@@ -124,30 +117,6 @@ namespace Casper {
 
             outb(254, 0xff, 0); // White border on startup
         }
-
-        /**
-         * Screen stuff
-         */
-        public int borderWidth = 20;   // absolute, not relative to pixelScale
-
-        public const int nPixelsWide = 256;
-        public const int nPixelsHigh = 192;
-        public const int nCharsWide = 32;
-        public const int nCharsHigh = 24;
-
-        private const int sat = 238;
-        private static readonly Color[] brightColors = {
-            Color.FromArgb(   0,   0,   0 ),  Color.FromArgb(   0,   0, sat ),
-            Color.FromArgb( sat,   0,   0 ),  Color.FromArgb( sat,   0, sat ),
-            Color.FromArgb(   0, sat,   0 ),  Color.FromArgb(   0, sat, sat ),
-            Color.FromArgb( sat, sat,   0 ),  Color.FromArgb( sat, sat, sat ),
-            Color.Black,                 Color.Blue,
-            Color.Red,                   Color.Magenta,
-            Color.Green,                 Color.Cyan,
-            Color.Yellow,                Color.White
-        };
-        private const int firstAttr = (nPixelsHigh * nCharsWide);
-        private const int lastAttr = firstAttr + (nCharsHigh * nCharsWide);
 
         public int newBorder = 7;  // White border on startup
         public int oldBorder = -1; // -1 mean update screen
@@ -169,7 +138,7 @@ namespace Casper {
             }
         }
 
-        byte[] banks = new byte[8];
+        readonly byte[] banks = new byte[8];
 
         public void DoKeys(bool down, params Key[] keys) {
             foreach (var key in keys) {
@@ -208,15 +177,15 @@ namespace Casper {
 
         public void LoadROM(byte[] bytes) {
             using var stream = new MemoryStream(bytes);
-            readBytes(stream, mem, 0, 16384);
+            ReadBytes(stream, mem, 0, 16384);
         }
 
         public void LoadSNA(byte[] bytes) {
             using var stream = new MemoryStream(bytes);
             int[] header = new int[27];
 
-            readBytes(stream, header, 0, 27);
-            readBytes(stream, mem, 16384, 49152);
+            ReadBytes(stream, header, 0, 27);
+            ReadBytes(stream, mem, 16384, 49152);
 
             I(header[0]);
 
@@ -277,7 +246,7 @@ namespace Casper {
             int[] header = new int[30];
             bool compressed = false;
 
-            bytesLeft -= readBytes(stream, header, 0, 30);
+            bytesLeft -= ReadBytes(stream, header, 0, 30);
 
             A(header[0]);
             F(header[1]);
@@ -351,7 +320,7 @@ namespace Casper {
                 int[] data = new int[bytesLeft];
                 int addr = 16384;
 
-                int size = readBytes(stream, data, 0, bytesLeft);
+                int size = ReadBytes(stream, data, 0, bytesLeft);
                 int i = 0;
 
                 while ((addr < 65536) && (i < size)) {
@@ -380,7 +349,7 @@ namespace Casper {
                 }
             }
             else {
-                readBytes(stream, mem, 16384, 49152);
+                ReadBytes(stream, mem, 16384, 49152);
             }
 
             ResetKeyboard();
@@ -389,7 +358,7 @@ namespace Casper {
 
         private void loadZ80_extended(Stream stream, int bytesLeft) {
             int[] header = new int[2];
-            bytesLeft -= readBytes(stream, header, 0, header.Length);
+            bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
             int type = header[0] | (header[1] << 8);
 
@@ -410,7 +379,7 @@ namespace Casper {
 
         private void loadZ80_v201(Stream stream, int bytesLeft) {
             int[] header = new int[23];
-            bytesLeft -= readBytes(stream, header, 0, header.Length);
+            bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
             PC(header[0] | (header[1] << 8));
 
@@ -427,7 +396,7 @@ namespace Casper {
             }
 
             int[] data = new int[bytesLeft];
-            readBytes(stream, data, 0, bytesLeft);
+            ReadBytes(stream, data, 0, bytesLeft);
 
             for (int offset = 0, j = 0; j < 3; j++) {
                 offset = loadZ80_page(data, offset);
@@ -436,7 +405,7 @@ namespace Casper {
 
         private void loadZ80_v300(Stream stream, int bytesLeft) {
             int[] header = new int[54];
-            bytesLeft -= readBytes(stream, header, 0, header.Length);
+            bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
             PC(header[0] | (header[1] << 8));
 
@@ -455,7 +424,7 @@ namespace Casper {
             }
 
             int[] data = new int[bytesLeft];
-            readBytes(stream, data, 0, bytesLeft);
+            ReadBytes(stream, data, 0, bytesLeft);
 
             for (int offset = 0, j = 0; j < 3; j++) {
                 offset = loadZ80_page(data, offset);
@@ -464,7 +433,7 @@ namespace Casper {
 
         private void loadZ80_v301(Stream stream, int bytesLeft) {
             int[] header = new int[58];
-            bytesLeft -= readBytes(stream, header, 0, header.Length);
+            bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
             PC(header[0] | (header[1] << 8));
 
@@ -484,7 +453,7 @@ namespace Casper {
             }
 
             int[] data = new int[bytesLeft];
-            readBytes(stream, data, 0, bytesLeft);
+            ReadBytes(stream, data, 0, bytesLeft);
 
             for (int offset = 0, j = 0; j < 3; j++) {
                 offset = loadZ80_page(data, offset);
@@ -554,7 +523,7 @@ namespace Casper {
         public int bytesReadSoFar = 0;
         public int bytesToReadTotal = 0;
 
-        private int readBytes(Stream stream, int[] a, int off, int n) {
+        private int ReadBytes(Stream stream, int[] a, int off, int n) {
             byte[] buff = new byte[n];
             int toRead = n;
             while (toRead > 0) {
