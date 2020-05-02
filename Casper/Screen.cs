@@ -10,8 +10,22 @@ namespace Casper {
     public class Screen {
         byte[,] pixels = new byte[32, 192];
         byte[,] colors = new byte[32, 24];
+        bool flashInverted;
 
         public event Action<int, int, ColorIndex> RenderPixel;
+
+        public void Flash() {
+            flashInverted = !flashInverted;
+
+            for (var cy = 0; cy < 24; cy++) {
+                for (var cx = 0; cx < 32; ++cx) {
+                    var attr = colors[cx, cy];
+                    if (attr.IsBit7Set()) {
+                        RenderAttr(cx, cy, attr);
+                    }
+                }
+            }
+        }
 
         internal void UpdateByte(int address, byte value) {
             if (RenderPixel == null) { return; }
@@ -30,18 +44,26 @@ namespace Casper {
             var py = ((address & 0b000_11_000_000_00000) >> 5)
                    | ((address & 0b000_00_000_111_00000) >> 2)
                    | ((address & 0b000_00_111_000_00000) >> 8);
-            var attr = colors[cx, py >> 3];
+            var cy = py >> 3;
 
             var oldValue = pixels[cx, py];
             pixels[cx, py] = newValue;
 
+            var attr = colors[cx, cy];
+            var foreground = Colors.ForegroundIndex(attr);
+            var background = Colors.BackgroundIndex(attr);
+            if (attr.IsBit7Set() && flashInverted) {
+                (foreground, background) = (background, foreground);
+            }
+
             var px = cx << 3;
             var changes = (byte) (newValue ^ oldValue);
             for (var dx = 7; dx >= 0; --dx) {
-                //if (changes.IsBit0Set()) {
-                    var index = newValue.IsBit0Set() ? Colors.ForegroundIndex(attr) : Colors.BackgroundIndex(attr);
+                if (changes.IsBit0Set()) {
+                    var isForeground = newValue.IsBit0Set();
+                    var index = isForeground ? foreground : background;
                     RenderPixel(px+dx, py, index);
-                //}
+                }
                 changes >>= 1;
                 newValue >>= 1;
             }
@@ -54,29 +76,24 @@ namespace Casper {
             var oldValue = colors[cx, cy];
             colors[cx, cy] = newValue;
 
-            var oldForeground = Colors.ForegroundIndex(oldValue);
-            var newForeground = Colors.ForegroundIndex(newValue);
-            var oldBackground = Colors.BackgroundIndex(oldValue);
-            var newBackground = Colors.BackgroundIndex(newValue);
+            RenderAttr(cx, cy, newValue);
+        }
+
+        void RenderAttr(int cx, int cy, byte attr) {
+            var foreground = Colors.ForegroundIndex(attr);
+            var background = Colors.BackgroundIndex(attr);
+            if (attr.IsBit7Set() && flashInverted) {
+                (foreground, background) = (background, foreground);
+            }
 
             var px = cx << 3;
             var py = cy << 3;
             for (var dy = 0; dy < 8; dy++) {
-                var value = pixels[cx, py+dy];
+                var value = pixels[cx, py + dy];
                 for (var dx = 7; dx >= 0; --dx) {
                     var isForeground = value.IsBit0Set();
+                    RenderPixel(px + dx, py + dy, isForeground ? foreground : background);
                     value >>= 1;
-
-                    if (isForeground) {
-                        if (oldForeground != newForeground) {
-                            RenderPixel(px+dx, py+dy, newForeground);
-                        }
-                    }
-                    else {
-                        if (oldBackground != newBackground) {
-                            RenderPixel(px+dx, py+dy, newBackground);
-                        }
-                    }
                 }
             }
         }

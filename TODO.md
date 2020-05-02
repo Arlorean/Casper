@@ -2,6 +2,7 @@
 
 - [x] Update favicon and PWA icon
 - [ ] Flashing attributes
+- [ ] Keyboard symbols
 - [ ] Static website on GitHub pages
 - [ ] Joystick support (Kempston/Interface 2)
 - [ ] Sound

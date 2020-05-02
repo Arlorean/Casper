@@ -99,14 +99,6 @@ namespace Casper {
             }
         }
 
-        /** Since execute runs as a tight loop, some Java VM implementations
-         *  don't allow any other threads to get a look in. This give the
-         *  GUI time to update. If anyone has a better solution please 
-         *  email us at mailto:spectrum@odie.demon.co.uk
-         */
-        public int sleepHack = 0;
-        public int refreshRate = 1;  // refresh every 'n' interrupts
-
         private int interruptCounter = 0;
         private bool resetAtNextInterrupt = false;
         private bool pauseAtNextInterrupt = false;
@@ -121,14 +113,8 @@ namespace Casper {
 
             // Characters flash every 1/2 a second
             if ((interruptCounter % 25) == 0) {
-                refreshFlashChars();
+                Screen.Flash();
             }
-
-            // Refresh every interrupt by default
-            if ((interruptCounter % refreshRate) == 0) {
-                //screenPaint();
-            }
-
 
             return base.interrupt();
         }
@@ -170,26 +156,6 @@ namespace Casper {
         public int oldSpeed = -1; // -1 mean update progressBar
         public int newSpeed = 0;
         public bool showStats = true;
-
-        private bool flashInvert = false;
-
-        private void refreshFlashChars() {
-            flashInvert = !flashInvert;
-
-            for (int i = firstAttr; i < lastAttr; i++) {
-                int attr = mem[i + 16384];
-
-                if ((attr & 0x80) != 0) {
-                    //last[i] = (~attr) & 0xff;
-
-                    //// Only add to update list if not already marked 
-                    //if ( next[i] == -1 ) {
-                    //	next[i] = FIRST;
-                    //	FIRST = i;
-                    //}
-                }
-            }
-        }
 
         public void RefreshScreen() {
             for (var addr = 16384; addr < 22528+768; ++addr) {
