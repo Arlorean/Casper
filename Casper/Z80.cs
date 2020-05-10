@@ -11,6 +11,7 @@
  * @see Jasper
  * @see Spectrum
  */
+#pragma warning disable IDE1006
 
 namespace Casper {
 
@@ -4084,7 +4085,7 @@ namespace Casper {
         /** Shift Right Logically - alters all flags (CHECKED) */
         private int srl(int ans) {
             bool c = (ans & 0x01) != 0;
-            ans = ans >> 1;
+            ans >>= 1;
 
             setS((ans & F_S) != 0);
             set3((ans & F_3) != 0);

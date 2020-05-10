@@ -19,11 +19,12 @@ namespace Casper.Blazor {
             }
             set {
                 if (timer == null) {
-                    timer = new Timer();
-                    timer.Interval = 20; // 20ms is 50 interrupts per second
+                    timer = new Timer {
+                        Interval = 20, // 20ms is 50 interrupts per second
+                        AutoReset = false,
+                        Enabled = false
+                    };
                     timer.Elapsed += Timer_Tick;
-                    timer.AutoReset = false;
-                    timer.Enabled = false;
                 }
                 timer.Enabled = value;
             }
@@ -69,7 +70,7 @@ namespace Casper.Blazor {
     }
 
     public static class KeyboardEventArgsExtensions {
-        static Dictionary<string, KeyCode> KeyCodeMap = Enum.GetValues(typeof(KeyCode))
+        private static readonly Dictionary<string, KeyCode> KeyCodeMap = Enum.GetValues(typeof(KeyCode))
             .Cast<KeyCode>()
             .ToDictionary(kc => kc.ToString(), kc => kc);
 

@@ -187,7 +187,7 @@ namespace Casper {
             return Array.Empty<Key>();
         }
 
-        static Dictionary<char, Key[]> KeysMap = new Dictionary<char, Key[]> {
+        static readonly Dictionary<char, Key[]> KeysMap = new Dictionary<char, Key[]> {
             { ' ', new [] { Key.SPACE } },
             { '\r', new [] { Key.ENTER } },
             { '\b', new [] { Key.CAPS, Key.D0 } },

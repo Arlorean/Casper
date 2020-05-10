@@ -277,7 +277,7 @@ namespace Casper {
             }
 
             if (PC() == 0) {
-                loadZ80_extended(stream, bytesLeft);
+                LoadZ80_extended(stream, bytesLeft);
             }
             else
             if (compressed) {
@@ -320,7 +320,7 @@ namespace Casper {
             RefreshScreen();
         }
 
-        private void loadZ80_extended(Stream stream, int bytesLeft) {
+        private void LoadZ80_extended(Stream stream, int bytesLeft) {
             int[] header = new int[2];
             bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
@@ -328,20 +328,20 @@ namespace Casper {
 
             switch (type) {
             case 23: /* V2.01 */
-                loadZ80_v201(stream, bytesLeft);
+                LoadZ80_v201(stream, bytesLeft);
                 break;
             case 54: /* V3.00 */
-                loadZ80_v300(stream, bytesLeft);
+                LoadZ80_v300(stream, bytesLeft);
                 break;
             case 58: /* V3.01 */
-                loadZ80_v301(stream, bytesLeft);
+                LoadZ80_v301(stream, bytesLeft);
                 break;
             default:
                 throw new Exception("Z80 (extended): unsupported type " + type);
             }
         }
 
-        private void loadZ80_v201(Stream stream, int bytesLeft) {
+        private void LoadZ80_v201(Stream stream, int bytesLeft) {
             int[] header = new int[23];
             bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
@@ -363,11 +363,11 @@ namespace Casper {
             ReadBytes(stream, data, 0, bytesLeft);
 
             for (int offset = 0, j = 0; j < 3; j++) {
-                offset = loadZ80_page(data, offset);
+                offset = LoadZ80_page(data, offset);
             }
         }
 
-        private void loadZ80_v300(Stream stream, int bytesLeft) {
+        private void LoadZ80_v300(Stream stream, int bytesLeft) {
             int[] header = new int[54];
             bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
@@ -391,11 +391,11 @@ namespace Casper {
             ReadBytes(stream, data, 0, bytesLeft);
 
             for (int offset = 0, j = 0; j < 3; j++) {
-                offset = loadZ80_page(data, offset);
+                offset = LoadZ80_page(data, offset);
             }
         }
 
-        private void loadZ80_v301(Stream stream, int bytesLeft) {
+        private void LoadZ80_v301(Stream stream, int bytesLeft) {
             int[] header = new int[58];
             bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
@@ -420,33 +420,24 @@ namespace Casper {
             ReadBytes(stream, data, 0, bytesLeft);
 
             for (int offset = 0, j = 0; j < 3; j++) {
-                offset = loadZ80_page(data, offset);
+                offset = LoadZ80_page(data, offset);
             }
         }
 
-        private int loadZ80_page(int[] data, int i) {
+        private int LoadZ80_page(int[] data, int i) {
             int blocklen;
             int page;
 
             blocklen = data[i++];
             blocklen |= (data[i++]) << 8;
             page = data[i++];
-
-            int addr;
-            switch (page) {
-            case 4:
-                addr = 32768;
-                break;
-            case 5:
-                addr = 49152;
-                break;
-            case 8:
-                addr = 16384;
-                break;
-            default:
-                throw new Exception("Z80 (page): out of range " + page);
-            }
-
+            var addr = page switch
+            {
+                4 => 32768,
+                5 => 49152,
+                8 => 16384,
+                _ => throw new Exception("Z80 (page): out of range " + page),
+            };
             int k = 0;
             while (k < blocklen) {
                 int tbyte = data[i++]; k++;

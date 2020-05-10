@@ -9,10 +9,10 @@ using System.Windows.Forms;
 namespace Casper.Forms {
     [System.ComponentModel.DesignerCategory("")] // Disable Windows Forms Designer in Visual Studio
     public class CasperForm : Form {
-        Spectrum spectrum;
-        Graphics graphics;
-        Timer interrupt;
-        Image image;
+        readonly Spectrum spectrum;
+        readonly Graphics graphics;
+        readonly Timer interrupt;
+        readonly Image image;
 
         public CasperForm() {
             this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.DoubleBuffer, true);
@@ -24,8 +24,9 @@ namespace Casper.Forms {
             spectrum = new Spectrum();
             spectrum.Screen.RenderPixel += RenderPixel;
 
-            interrupt = new Timer();
-            interrupt.Interval = 20; // 20ms is 50 interrupts per second
+            interrupt = new Timer {
+                Interval = 20 // 20ms is 50 interrupts per second
+            };
             interrupt.Tick += Interrupt_Tick;
 
             image = new Bitmap(Screen.Width, Screen.Height);
@@ -110,7 +111,7 @@ namespace Casper.Forms {
             }
         }
 
-        static Dictionary<Keys, KeyCode> KeyCodeMap = new Dictionary<Keys, KeyCode>() {
+        static readonly Dictionary<Keys, KeyCode> KeyCodeMap = new Dictionary<Keys, KeyCode>() {
 
         // https://www.w3.org/TR/uievents-code/#key-alphanumeric-writing-system
             { Keys.OemPipe, KeyCode.Backquote },
