@@ -20,29 +20,19 @@ namespace Casper {
     /// </summary>
     public class Spectrum : Z80 {
         public Screen Screen { get; } = new Screen();
+        public Keyboard Keyboard { get; } = new Keyboard();
 
         public Spectrum() : base(3.5) { // Spectrum runs at 3.5Mhz
-            ResetKeyboard();
         }
 
         /// <summary>
         /// Z80 hardware interface
         /// </summary>
         public override int inb(int port) {
-            int res = 0xff;
-
             if ((port & 0x0001) == 0) {
-                if ((port & 0x8000) == 0) { res &= banks[7]; }
-                if ((port & 0x4000) == 0) { res &= banks[6]; }
-                if ((port & 0x2000) == 0) { res &= banks[5]; }
-                if ((port & 0x1000) == 0) { res &= banks[4]; }
-                if ((port & 0x0800) == 0) { res &= banks[3]; }
-                if ((port & 0x0400) == 0) { res &= banks[2]; }
-                if ((port & 0x0200) == 0) { res &= banks[1]; }
-                if ((port & 0x0100) == 0) { res &= banks[0]; }
+                return Keyboard.InPort((ushort)port);
             }
-
-            return (res);
+            return 0xff;
         }
         public override void outb(int port, int outByte, int tstates) {
             if ((port & 0x0001) == 0) {
@@ -112,8 +102,13 @@ namespace Casper {
             return base.interrupt();
         }
 
-        public override void reset() {
-            base.reset();
+        public override void Step() {
+            Keyboard.ProcessLogicalKeys();
+            base.Step();
+        }
+
+        public override void Reset() {
+            base.Reset();
 
             outb(254, 0xff, 0); // White border on startup
         }
@@ -132,38 +127,7 @@ namespace Casper {
             }
         }
 
-        public void ResetKeyboard() {
-            for (var i=0; i < 8; ++i) {
-                banks[i] = 0xff;
-            }
-        }
 
-        readonly byte[] banks = new byte[8];
-
-        public void DoKeys(bool down, params Key[] keys) {
-            foreach (var key in keys) {
-                var bank = ((int)key / 5);
-                var bit = 1 << ((int)key % 5);
-                if (down) {
-                    banks[bank] &= (byte)(~bit);
-                }
-                else {
-                    banks[bank] |= (byte)(bit);
-                }
-            }
-        }
-
-        public Key[] GetKeysPressed() {
-            var pressed = new List<Key>();
-            foreach (Key key in Enum.GetValues(typeof(Key))) {
-                var bank = ((int)key / 5);
-                var bit = 1 << ((int)key % 5);
-                if ((banks[bank] & (byte)(bit)) == 0) {
-                    pressed.Add(key);
-                }
-            }
-            return pressed.ToArray();
-        }
 
         public void LoadSnapshot(byte[] bytes) {
             // Crude check but it'll work (SNA is a fixed size)
@@ -235,7 +199,6 @@ namespace Casper {
             REFRESH(2);
             poppc();
 
-            ResetKeyboard();
             RefreshScreen();
         }
 
@@ -352,7 +315,6 @@ namespace Casper {
                 ReadBytes(stream, mem, 16384, 49152);
             }
 
-            ResetKeyboard();
             RefreshScreen();
         }
 

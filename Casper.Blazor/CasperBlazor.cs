@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components.Web;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Timers;
 
 namespace Casper.Blazor {
@@ -28,71 +30,55 @@ namespace Casper.Blazor {
         }
 
         void Timer_Tick(object sender, EventArgs e) {
-            base.execute();
+            base.Step();
             Interrupt?.Invoke();
             timer.Start();
         }
 
-        public void DoKey(KeyboardEventArgs args, bool down) {
-            // Key codes from: https://developer.mozilla.org/en-US/docs/Web/API/Document/keydown_event#addEventListener_keydown_example
-            switch (args.Code) {
-                case "KeyA": base.DoKeys(down, Key.A); break;
-                case "KeyB": base.DoKeys(down, Key.B); break;
-                case "KeyC": base.DoKeys(down, Key.C); break;
-                case "KeyD": base.DoKeys(down, Key.D); break;
-                case "KeyE": base.DoKeys(down, Key.E); break;
-                case "KeyF": base.DoKeys(down, Key.F); break;
-                case "KeyG": base.DoKeys(down, Key.G); break;
-                case "KeyH": base.DoKeys(down, Key.H); break;
-                case "KeyI": base.DoKeys(down, Key.I); break;
-                case "KeyJ": base.DoKeys(down, Key.J); break;
-                case "KeyK": base.DoKeys(down, Key.K); break;
-                case "KeyL": base.DoKeys(down, Key.L); break;
-                case "KeyM": base.DoKeys(down, Key.M); break;
-                case "KeyN": base.DoKeys(down, Key.N); break;
-                case "KeyO": base.DoKeys(down, Key.O); break;
-                case "KeyP": base.DoKeys(down, Key.P); break;
-                case "KeyQ": base.DoKeys(down, Key.Q); break;
-                case "KeyR": base.DoKeys(down, Key.R); break;
-                case "KeyS": base.DoKeys(down, Key.S); break;
-                case "KeyT": base.DoKeys(down, Key.T); break;
-                case "KeyU": base.DoKeys(down, Key.U); break;
-                case "KeyV": base.DoKeys(down, Key.V); break;
-                case "KeyW": base.DoKeys(down, Key.W); break;
-                case "KeyX": base.DoKeys(down, Key.X); break;
-                case "KeyY": base.DoKeys(down, Key.Y); break;
-                case "KeyZ": base.DoKeys(down, Key.Z); break;
+        /// <summary>
+        /// If true, use logical key press based on the attached keyboard,
+        /// i.e. on an AZERTY keyboard pressing the first physical alphabet key
+        ///      will type an 'A' into the spectrum.
+        /// In this mode only one key can be pressed at a time.
+        /// This allows for natural typing and is best for BASIC and other non-game applications.
+        /// 
+        /// If false, then the physical keyboard layout will be used.
+        /// i.e. on an AZERTY keyboard pressing the first physical alphabet key
+        ///      will type an 'Q' into the spectrum.
+        /// </summary>
+        public bool UseLogicalKeyboardLayout { get; set; }
 
-                case "Digit0": base.DoKeys(down, Key.D0); break;
-                case "Digit1": base.DoKeys(down, Key.D1); break;
-                case "Digit2": base.DoKeys(down, Key.D2); break;
-                case "Digit3": base.DoKeys(down, Key.D3); break;
-                case "Digit4": base.DoKeys(down, Key.D4); break;
-                case "Digit5": base.DoKeys(down, Key.D5); break;
-                case "Digit6": base.DoKeys(down, Key.D6); break;
-                case "Digit7": base.DoKeys(down, Key.D7); break;
-                case "Digit8": base.DoKeys(down, Key.D8); break;
-                case "Digit9": base.DoKeys(down, Key.D9); break;
+        internal void OnKey(KeyboardEventArgs args, bool down) {
+            // Emulator control keys
+            switch (args.KeyCode()) {
+                case KeyCode.Pause: if (down) { Running = !Running; }; return;
+                case KeyCode.Escape: if (down) { UseLogicalKeyboardLayout = !UseLogicalKeyboardLayout; }; return;
+            }
 
-                case "ShiftLeft": base.DoKeys(down, Key.CAPS); break;
-                case "ShiftRight": base.DoKeys(down, Key.SYMB); break;
-                case "Enter": base.DoKeys(down, Key.ENTER); break;
-                case "Space": base.DoKeys(down, Key.SPACE); break;
-
-                case "Backspace":
-                case "Delete": base.DoKeys(down, Key.CAPS, Key.D0); break;
-
-                case "ArrowLeft": base.DoKeys(down, Key.CAPS, Key.D5); break;
-                case "ArrowDown": base.DoKeys(down, Key.CAPS, Key.D6); break;
-                case "ArrowUp": base.DoKeys(down, Key.CAPS, Key.D7); break;
-                case "ArrowRight": base.DoKeys(down, Key.CAPS, Key.D8); break;
-
-                case "Period": base.DoKeys(down, Key.SYMB, Key.M); break;
-                case "Comma": base.DoKeys(down, Key.SYMB, Key.N); break;
-                case "Semicolon": base.DoKeys(down, Key.CAPS, Key.D8); break;
-
-                case "Escape": Running = !Running; break;
+            // KeyCode is the PHYSICAL key pressed so Keys.Q would be the first letter on the first row of letters.
+            // For an AZERTY keyboard when the "A" key is pressed the KeyCode value is Keys.Q.
+            if (UseLogicalKeyboardLayout && args.Key.Length == 1) {
+                if (down) {
+                    Keyboard.OnLogicalKeys(args.Key);
+                }
+            }
+            else {
+                Keyboard.OnPhysicalKey(down, args.KeyCode());
             }
         }
     }
+
+    public static class KeyboardEventArgsExtensions {
+        static Dictionary<string, KeyCode> KeyCodeMap = Enum.GetValues(typeof(KeyCode))
+            .Cast<KeyCode>()
+            .ToDictionary(kc => kc.ToString(), kc => kc);
+
+        public static KeyCode KeyCode(this KeyboardEventArgs args) {
+            if (KeyCodeMap.TryGetValue(args.Code, out var keyCode)) {
+                return keyCode;
+            }
+            return Casper.KeyCode.Unidentified;
+        }
+    }
+
 }

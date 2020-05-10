@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -29,7 +29,12 @@ namespace Casper.Forms {
 
             spectrum.LoadROM(Casper.Shared.Resources.Spectrum);
             spectrum.LoadSnapshot(Casper.Shared.Resources.ManicMiner);
-            interrupt.Enabled = true;
+            Running = true;
+        }
+
+        public bool Running {
+            get { return interrupt.Enabled; }
+            set { interrupt.Enabled = value; }
         }
 
         [STAThread]
@@ -42,7 +47,7 @@ namespace Casper.Forms {
         static readonly Brush[] brushes = Colors.Palette.Select(c => new SolidBrush(c)).ToArray();
 
         void Interrupt_Tick(object sender, EventArgs e) {
-            spectrum.execute();
+            spectrum.Step();
             Invalidate();
         }
 
@@ -61,73 +66,271 @@ namespace Casper.Forms {
         protected override void OnPaintBackground(PaintEventArgs e) {}
 
         protected override void OnKeyDown(KeyEventArgs e) {
-            DoKey(e, true);
+            OnPhysicalKey(e, true);
         }
 
         protected override void OnKeyUp(KeyEventArgs e) {
-            DoKey(e, false);
+            OnPhysicalKey(e, false);
         }
 
-        static KeysConverter converter = new KeysConverter();
+        protected override void OnKeyPress(KeyPressEventArgs e) {
+            OnLogicalKey(e);    
+        }
 
-        void DoKey(KeyEventArgs args, bool down) {
+        public bool UseLogicalKeyboardLayout { get; set; }
+
+        void OnPhysicalKey(KeyEventArgs args, bool down) {
+            // Emulator control keys
             switch (args.KeyCode) {
-            case Keys.A: spectrum.DoKeys(down, Key.A); break;
-            case Keys.B: spectrum.DoKeys(down, Key.B); break;
-            case Keys.C: spectrum.DoKeys(down, Key.C); break;
-            case Keys.D: spectrum.DoKeys(down, Key.D); break;
-            case Keys.E: spectrum.DoKeys(down, Key.E); break;
-            case Keys.F: spectrum.DoKeys(down, Key.F); break;
-            case Keys.G: spectrum.DoKeys(down, Key.G); break;
-            case Keys.H: spectrum.DoKeys(down, Key.H); break;
-            case Keys.I: spectrum.DoKeys(down, Key.I); break;
-            case Keys.J: spectrum.DoKeys(down, Key.J); break;
-            case Keys.K: spectrum.DoKeys(down, Key.K); break;
-            case Keys.L: spectrum.DoKeys(down, Key.L); break;
-            case Keys.M: spectrum.DoKeys(down, Key.M); break;
-            case Keys.N: spectrum.DoKeys(down, Key.N); break;
-            case Keys.O: spectrum.DoKeys(down, Key.O); break;
-            case Keys.P: spectrum.DoKeys(down, Key.P); break;
-            case Keys.Q: spectrum.DoKeys(down, Key.Q); break;
-            case Keys.R: spectrum.DoKeys(down, Key.R); break;
-            case Keys.S: spectrum.DoKeys(down, Key.S); break;
-            case Keys.T: spectrum.DoKeys(down, Key.T); break;
-            case Keys.U: spectrum.DoKeys(down, Key.U); break;
-            case Keys.V: spectrum.DoKeys(down, Key.V); break;
-            case Keys.W: spectrum.DoKeys(down, Key.W); break;
-            case Keys.X: spectrum.DoKeys(down, Key.X); break;
-            case Keys.Y: spectrum.DoKeys(down, Key.Y); break;
-            case Keys.Z: spectrum.DoKeys(down, Key.Z); break;
+                case Keys.Pause: if (down) { Running = !Running; }; return;
+                case Keys.Escape: if (down) { UseLogicalKeyboardLayout = !UseLogicalKeyboardLayout; }; return;
+            }
 
-            case Keys.D0: spectrum.DoKeys(down, Key.D0); break;
-            case Keys.D1: spectrum.DoKeys(down, Key.D1); break;
-            case Keys.D2: spectrum.DoKeys(down, Key.D2); break;
-            case Keys.D3: spectrum.DoKeys(down, Key.D3); break;
-            case Keys.D4: spectrum.DoKeys(down, Key.D4); break;
-            case Keys.D5: spectrum.DoKeys(down, Key.D5); break;
-            case Keys.D6: spectrum.DoKeys(down, Key.D6); break;
-            case Keys.D7: spectrum.DoKeys(down, Key.D7); break;
-            case Keys.D8: spectrum.DoKeys(down, Key.D8); break;
-            case Keys.D9: spectrum.DoKeys(down, Key.D9); break;
-
-            case Keys.LShiftKey: spectrum.DoKeys(down, Key.CAPS); break;
-            case Keys.RShiftKey: spectrum.DoKeys(down, Key.SYMB); break;
-            case Keys.Enter: spectrum.DoKeys(down, Key.ENTER); break;
-            case Keys.Space: spectrum.DoKeys(down, Key.SPACE); break;
-
-            case Keys.Back:
-            case Keys.Delete: spectrum.DoKeys(down, Key.CAPS, Key.D0); break;
-
-            case Keys.Left:  spectrum.DoKeys(down, Key.CAPS, Key.D5); break;
-            case Keys.Down:  spectrum.DoKeys(down, Key.CAPS, Key.D6); break;
-            case Keys.Up:    spectrum.DoKeys(down, Key.CAPS, Key.D7); break;
-            case Keys.Right: spectrum.DoKeys(down, Key.CAPS, Key.D8); break;
-
-            case Keys.OemPeriod:    spectrum.DoKeys(down, Key.SYMB, Key.M); break;
-            case Keys.Oemcomma:     spectrum.DoKeys(down, Key.SYMB, Key.N); break;
-            case Keys.OemSemicolon: spectrum.DoKeys(down, Key.CAPS, Key.D8); break;
-
+            // KeyCode is the PHYSICAL key pressed so Keys.Q would be the first letter on the first row of letters.
+            // For an AZERTY keyboard when the "A" key is pressed the KeyCode value is Keys.Q.
+            if (KeyCodeMap.TryGetValue(args.KeyCode, out var keyCode)) {
+                spectrum.Keyboard.OnPhysicalKey(down, keyCode);
             }
         }
+
+        void OnLogicalKey(KeyPressEventArgs args) {
+            if (UseLogicalKeyboardLayout) {
+                spectrum.Keyboard.OnLogicalKeys(args.KeyChar.ToString());
+            }
+        }
+
+        static Dictionary<Keys, KeyCode> KeyCodeMap = new Dictionary<Keys, KeyCode>() {
+
+        // https://www.w3.org/TR/uievents-code/#key-alphanumeric-writing-system
+            { Keys.OemPipe, KeyCode.Backquote },
+            { Keys.OemBackslash, KeyCode.Backslash },
+            { Keys.Back, KeyCode.Backspace },
+            { Keys.OemOpenBrackets, KeyCode.BracketLeft },
+            { Keys.OemCloseBrackets, KeyCode.BracketRight },
+            { Keys.Oemcomma, KeyCode.Comma },
+
+            { Keys.D0, KeyCode.Digit0 },
+            { Keys.D1, KeyCode.Digit1 },
+            { Keys.D2, KeyCode.Digit2 },
+            { Keys.D3, KeyCode.Digit3 },
+            { Keys.D4, KeyCode.Digit4 },
+            { Keys.D5, KeyCode.Digit5 },
+            { Keys.D6, KeyCode.Digit6 },
+            { Keys.D7, KeyCode.Digit7 },
+            { Keys.D8, KeyCode.Digit8 },
+            { Keys.D9, KeyCode.Digit9 },
+
+        //Equal,
+        //IntlBackslash,
+        //IntlRo,
+        //IntlYen,
+
+            { Keys.A, KeyCode.KeyA },
+            { Keys.B, KeyCode.KeyB },
+            { Keys.C, KeyCode.KeyC },
+            { Keys.D, KeyCode.KeyD },
+            { Keys.E, KeyCode.KeyE },
+            { Keys.F, KeyCode.KeyF },
+            { Keys.G, KeyCode.KeyG },
+            { Keys.H, KeyCode.KeyH },
+            { Keys.I, KeyCode.KeyI },
+            { Keys.J, KeyCode.KeyJ },
+            { Keys.K, KeyCode.KeyK },
+            { Keys.L, KeyCode.KeyL },
+            { Keys.M, KeyCode.KeyM },
+            { Keys.N, KeyCode.KeyN },
+            { Keys.O, KeyCode.KeyO },
+            { Keys.P, KeyCode.KeyP },
+            { Keys.Q, KeyCode.KeyQ },
+            { Keys.R, KeyCode.KeyR },
+            { Keys.T, KeyCode.KeyT },
+            { Keys.U, KeyCode.KeyU },
+            { Keys.V, KeyCode.KeyV },
+            { Keys.W, KeyCode.KeyW },
+            { Keys.X, KeyCode.KeyX },
+            { Keys.Y, KeyCode.KeyY },
+            { Keys.Z, KeyCode.KeyZ },
+
+            //{ Keys.OemMinus, KeyCode.Equal },
+            //{ Keys.OemPeriod, KeyCode.Period },
+            //{ Keys.OemQuotes, KeyCode.Quote },
+            //{ Keys.OemSemicolon, KeyCode.Semicolon },
+
+        //Slash,
+
+        // https://www.w3.org/TR/uievents-code/#key-alphanumeric-functional
+            //{ Keys.LMenu, KeyCode.AltLeft },
+            //{ Keys.Menu, KeyCode.AltRight },
+            //{ Keys.CapsLock, KeyCode.CapsLock },
+
+        // ContextMenu,
+
+            { Keys.LControlKey, KeyCode.ControlLeft },
+            { Keys.RControlKey, KeyCode.ControlRight },
+            { Keys.Enter, KeyCode.Enter },
+            //{ Keys.LWin, KeyCode.MetaLeft },
+            //{ Keys.RWin, KeyCode.MetaRight },
+            { Keys.LShiftKey, KeyCode.ShiftLeft },
+            { Keys.RShiftKey, KeyCode.ShiftRight },
+            { Keys.Space, KeyCode.Space },
+            //{ Keys.Tab, KeyCode.Tab },
+
+        // https://www.w3.org/TR/uievents-code/#key-controlpad-section
+            //{ Keys.Delete, KeyCode.Delete },
+            //{ Keys.End, KeyCode.End },
+            //{ Keys.Help, KeyCode.Help },
+            //{ Keys.Home, KeyCode.Home },
+            //{ Keys.Insert, KeyCode.Insert },
+            //{ Keys.PageDown, KeyCode.PageDown },
+            //{ Keys.PageUp, KeyCode.PageUp },
+
+        // https://www.w3.org/TR/uievents-code/#key-arrowpad-section
+            { Keys.Down, KeyCode.ArrowDown },
+            { Keys.Left, KeyCode.ArrowLeft },
+            { Keys.Right, KeyCode.ArrowRight },
+            { Keys.Up, KeyCode.ArrowUp },
+
+        // https://www.w3.org/TR/uievents-code/#key-numpad-section
+            //{ Keys.NumLock, KeyCode.NumLock },
+            { Keys.NumPad0, KeyCode.Numpad0 },
+            { Keys.NumPad1, KeyCode.Numpad1 },
+            { Keys.NumPad2, KeyCode.Numpad2 },
+            { Keys.NumPad3, KeyCode.Numpad3 },
+            { Keys.NumPad4, KeyCode.Numpad4 },
+            { Keys.NumPad5, KeyCode.Numpad5 },
+            { Keys.NumPad6, KeyCode.Numpad6 },
+            { Keys.NumPad7, KeyCode.Numpad7 },
+            { Keys.NumPad8, KeyCode.Numpad8 },
+            { Keys.NumPad9, KeyCode.Numpad9 },
+
+            //{ Keys.Oemplus, KeyCode.NumpadAdd },
+
+        //NumpadAdd,
+        //NumpadBackspace,
+        //NumpadClear,
+        //NumpadClearEntry,
+        //NumpadComma,
+        //NumpadDecimal,
+        //NumpadDivide,
+        //NumpadEnter,
+        //NumpadEqual,
+        //NumpadHash,
+        //NumpadMemoryAdd,
+        //NumpadMemoryClear,
+        //NumpadMemoryRecall,
+        //NumpadMemoryStore,
+        //NumpadMemorySubtract,
+        //NumpadMultiply,
+        //NumpadParenLeft,
+        //NumpadParenRight,
+        //NumpadStar,
+        //NumpadSubtract,
+
+        // https://www.w3.org/TR/uievents-code/#key-function-section
+            //{ Keys.Escape, KeyCode.Escape },
+            //{ Keys.F1, KeyCode.F1 },
+            //{ Keys.F2, KeyCode.F2 },
+            //{ Keys.F3, KeyCode.F3 },
+            //{ Keys.F4, KeyCode.F4 },
+            //{ Keys.F5, KeyCode.F5 },
+            //{ Keys.F6, KeyCode.F6 },
+            //{ Keys.F7, KeyCode.F7 },
+            //{ Keys.F8, KeyCode.F8 },
+            //{ Keys.F9, KeyCode.F9 },
+            //{ Keys.F10, KeyCode.F10 },
+            //{ Keys.F11, KeyCode.F11 },
+            //{ Keys.F12, KeyCode.F12 },
+        //Fn,
+        //FnLock,
+            //{ Keys.PrintScreen, KeyCode.PrintScreen },
+            //{ Keys.Scroll, KeyCode.ScrollLock },
+            //{ Keys.Pause, KeyCode.Pause },
+
+        // https://www.w3.org/TR/uievents-code/#key-media
+            //{ Keys.BrowserBack, KeyCode.BrowserBack },
+            //{ Keys.BrowserFavorites, KeyCode.BrowserFavorites },
+            //{ Keys.BrowserForward, KeyCode.BrowserForward },
+            //{ Keys.BrowserHome, KeyCode.BrowserHome },
+            //{ Keys.BrowserRefresh, KeyCode.BrowserRefresh },
+            //{ Keys.BrowserSearch, KeyCode.BrowserSearch },
+            //{ Keys.BrowserStop, KeyCode.BrowserStop },
+        //Eject,
+            //{ Keys.LaunchApplication1, KeyCode.LaunchApp1 },
+            //{ Keys.LaunchApplication2, KeyCode.LaunchApp2 },
+            //{ Keys.LaunchMail, KeyCode.LaunchMail },
+            //{ Keys.MediaPlayPause, KeyCode.MediaPlayPause },
+            //{ Keys.SelectMedia, KeyCode.MediaSelect },
+            //{ Keys.MediaStop, KeyCode.MediaStop },
+            //{ Keys.MediaNextTrack, KeyCode.MediaTrackNext },
+            //{ Keys.MediaPreviousTrack, KeyCode.MediaTrackPrevious },
+        //Power,
+            //{ Keys.Sleep, KeyCode.Sleep },
+            //{ Keys.VolumeDown, KeyCode.AudioVolumeDown },
+            //{ Keys.VolumeMute, KeyCode.AudioVolumeMute },
+            //{ Keys.VolumeUp, KeyCode.AudioVolumeUp },
+        //WakeUp,
+
+        // https://www.w3.org/TR/uievents-code/#key-legacy
+        //Hyper,
+        //Super,
+        //Turbo,
+        //Abort,
+        //Resume,
+        //Suspend,
+        //Again,
+        //Copy,
+        //Cut,
+        //Find,
+        //Open,
+        //Paste,
+        //Props,
+        //Select,
+        //Undo,
+        //Hiragana,
+        //Katakana,
+        //Unidentified,
+        };
+
+        #region Detect Left or Right, Shift or Control
+        // StackOverflow: .net difference between right shift and left shift keys
+        // https://stackoverflow.com/a/27698458/256627
+
+        // Keyboard Scan Codes
+        // https://download.microsoft.com/download/1/6/1/161ba512-40e2-4cc9-843a-923143f3456c/scancode.doc
+        const int LShift = 0x2A;
+        const int RShift = 0x36;
+        const int LControl = 0x1D;
+        const int RControl = 0x11D;
+
+        // Windows Keyboard Messages
+        // https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
+        const int WM_KEYDOWN = 0x100;
+        const int WM_KEYUP = 0x101;
+
+        // Virtual KeyCodes
+        // https://docs.microsoft.com/en-gb/windows/win32/inputdev/virtual-key-codes
+        const int VK_SHIFT = 0x10;
+        const int VK_CONTROL = 0x11;
+
+        protected override bool ProcessKeyMessage(ref Message m) {
+            if ((m.Msg == WM_KEYDOWN || m.Msg == WM_KEYUP) && ((int)m.WParam == VK_CONTROL || (int)m.WParam == VK_SHIFT)) {
+                Keys? key = null;
+                switch (((int)m.LParam >> 16) & 0x1FF) {
+                    case LControl: key = Keys.LControlKey; break;
+                    case RControl: key = Keys.RControlKey; break;
+                    case LShift: key = Keys.LShiftKey; break;
+                    case RShift: key = Keys.RShiftKey; break;
+                }
+                if (key.HasValue) {
+                    if (m.Msg == WM_KEYDOWN)
+                        OnKeyDown(new KeyEventArgs(key.Value));
+                    else
+                        OnKeyUp(new KeyEventArgs(key.Value));
+                    return true;
+                }
+            }
+            return base.ProcessKeyMessage(ref m);
+        }
+        #endregion
     }
 }

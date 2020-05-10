@@ -1,16 +1,20 @@
 ﻿@inherits LayoutComponentBase
 @inject CasperBlazor Spectrum
 
-<div class="casper-div" tabindex="0" @onkeydown="@KeyDown" @onkeyup="@KeyUp">
+<div class="casper-div" tabindex="0" @onkeydown="@KeyDown" @onkeyup="@KeyUp" @onfocusout="@FocusOut">
     <CasperSvg />
 </div>
 
 @code {
     void KeyDown(KeyboardEventArgs args) {
-        Spectrum.DoKey(args, down: true);
+        Spectrum.OnKey(args, down: true);
     }
 
     void KeyUp(KeyboardEventArgs args) {
-        Spectrum.DoKey(args, down: false);
+        Spectrum.OnKey(args, down: false);
+    }
+
+    void FocusOut(FocusEventArgs args) {
+        Spectrum.Keyboard.Reset();
     }
 }

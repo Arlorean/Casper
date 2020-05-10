@@ -305,8 +305,12 @@ namespace Casper {
         }
 
 
+        public virtual void Step() {
+            execute();
+        }
+
         /** Reset all registers to power on state */
-        public virtual void reset() {
+        public virtual void Reset() {
             PC(0);
             SP(0);
 
@@ -379,7 +383,7 @@ namespace Casper {
         int local_tstates;
 
         /** Z80 fetch/execute loop */
-        public void execute() {
+        void execute() {
             local_tstates -= tstatesPerInterrupt;
 
             while (true) {

@@ -5,8 +5,8 @@
      viewBox="0 0 256 192"
      shape-rendering="crispEdges"
      xmlns="http://www.w3.org/2000/svg">
-    @for (var x = 0; x < 256; ++x) {
-        for (var y = 0; y < 192; ++y) {
+    @for (var y = 0; y < 192; ++y) {
+        for (var x = 0; x < 256; ++x) {
             <rect x="@x" y="@y" width="1" height="1" fill="@pixels[x,y]" />
         }
     }
