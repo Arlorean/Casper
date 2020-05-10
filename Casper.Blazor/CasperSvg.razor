@@ -2,18 +2,22 @@
 @inject CasperBlazor Spectrum
 
 <svg class="casper-svg"
-     viewBox="0 0 256 192"
+     viewBox="0 0 @Screen.OuterRectangle.Width @Screen.OuterRectangle.Height"
      shape-rendering="crispEdges"
      xmlns="http://www.w3.org/2000/svg">
-    @for (var y = 0; y < 192; ++y) {
-        for (var x = 0; x < 256; ++x) {
+    <rect x="0" y="0" width="@Screen.OuterRectangle.Width" height="@Screen.OuterRectangle.Height" fill="@border" />
+    <g transform="translate(@Screen.InnerRectangle.X @Screen.InnerRectangle.Y)">
+    @for (var y = 0; y < Screen.Height; ++y) {
+        for (var x = 0; x < Screen.Width; ++x) {
             <rect x="@x" y="@y" width="1" height="1" fill="@pixels[x,y]" />
         }
     }
+    </g>
 </svg>
 
 @code {
-    string[,] pixels = new string[256, 192];
+    string border;
+    string[,] pixels = new string[Screen.Width, Screen.Height];
     bool screenUpdated;
 
     static string[] colorStrings = Colors.Palette.Select(c => $"#{c.R:X2}{c.G:X2}{c.B:X2}").ToArray();
@@ -21,6 +25,7 @@
     protected override void OnInitialized() {
         Spectrum.Interrupt += Redraw;
         Spectrum.Screen.RenderPixel += RenderPixel;
+        Spectrum.Screen.RenderBorder += RenderBorder;
         Spectrum.RefreshScreen();
     }
 
@@ -31,6 +36,11 @@
 
     public void RenderPixel(int x, int y, ColorIndex colorIndex) {
         pixels[x, y] = colorStrings[(int)colorIndex];
+        screenUpdated = true;
+    }
+
+    public void RenderBorder(ColorIndex colorIndex) {
+        border = colorStrings[(int)colorIndex];
         screenUpdated = true;
     }
 

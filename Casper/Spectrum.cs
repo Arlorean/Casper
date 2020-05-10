@@ -94,8 +94,9 @@ namespace Casper {
         public override int interrupt() {
             interruptCounter++;
 
-            // Characters flash every 1/2 a second
-            if ((interruptCounter % 25) == 0) {
+            // Characters flash every 16 frames (16/50s = 0.32s)
+            // https://www.worldofspectrum.org/faq/reference/48kreference.htm#ZXSpectrum
+            if ((interruptCounter % 16) == 0) {
                 Screen.Flash();
             }
 
@@ -122,6 +123,7 @@ namespace Casper {
         public bool showStats = true;
 
         public void RefreshScreen() {
+            Screen.UpdateBorder(Screen.Border);
             for (var addr = 16384; addr < 22528+768; ++addr) {
                 Screen.UpdateByte(addr, (byte)mem[addr]);
             }

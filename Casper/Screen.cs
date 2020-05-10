@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Text;
 
 namespace Casper {
@@ -8,12 +9,32 @@ namespace Casper {
     /// http://www.zxdesign.info/memoryToScreen.shtml
     /// </summary>
     public class Screen {
+        ColorIndex border = ColorIndex.Black;
         readonly byte[,] pixels = new byte[32, 192];
         readonly byte[,] colors = new byte[32, 24];
         bool flashInverted;
 
-        public ColorIndex Border { get; set; }
+        // http://www.zxdesign.info/vidparam.shtml
+        // https://www.worldofspectrum.org/faq/reference/48kreference.htm#ZXSpectrum
+        public const int Width = 256;
+        public const int Height = 192;
+        public const int BorderLeft = 48;
+        public const int BorderRight = 48;
+        public const int BorderTop = 48;
+        public const int BorderBottom = 56;
+        public static readonly Rectangle InnerRectangle = new Rectangle(BorderLeft, BorderTop, Width, Height);
+        public static readonly Rectangle OuterRectangle = new Rectangle(0, 0, BorderLeft + Width + BorderRight, BorderTop + Height + BorderBottom);
 
+        public ColorIndex Border {
+            get { return border; }
+            set {
+                if (border != value) {
+                    UpdateBorder(value);
+                }
+            }
+        }
+
+        public event Action<ColorIndex> RenderBorder;
         public event Action<int, int, ColorIndex> RenderPixel;
 
         public void Flash() {
@@ -29,6 +50,11 @@ namespace Casper {
                     }
                 }
             }
+        }
+
+        internal void UpdateBorder(ColorIndex border) {
+            this.border = border;
+            RenderBorder?.Invoke(border);
         }
 
         internal void UpdateByte(int address, byte value) {

@@ -1,6 +1,5 @@
 # Casper - TODO
 
-- [ ] Border color support
 - [ ] Joystick support (Kempston/Interface 2)
 - [ ] Static website on GitHub pages
 - [ ] Sound
@@ -13,3 +12,4 @@
 - [x] Flashing attributes
 - [x] Keyboard clear on window focus events
 - [x] Keyboard symbols
+- [x] Border color support

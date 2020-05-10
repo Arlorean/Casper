@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace Casper.Forms {
@@ -13,6 +15,12 @@ namespace Casper.Forms {
         Image image;
 
         public CasperForm() {
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.DoubleBuffer, true);
+            this.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
+            this.ShowIcon = true;
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
+
             spectrum = new Spectrum();
             spectrum.Screen.RenderPixel += RenderPixel;
 
@@ -20,12 +28,12 @@ namespace Casper.Forms {
             interrupt.Interval = 20; // 20ms is 50 interrupts per second
             interrupt.Tick += Interrupt_Tick;
 
-            image = new Bitmap(256, 192);
+            image = new Bitmap(Screen.Width, Screen.Height);
             graphics = Graphics.FromImage(image);
             graphics.Clear(Color.Black);
 
             this.Text = "Casper";
-            this.ClientSize = image.Size;
+            this.ClientSize = Screen.OuterRectangle.Size + Screen.OuterRectangle.Size;
 
             spectrum.LoadROM(Casper.Shared.Resources.Spectrum);
             spectrum.LoadSnapshot(Casper.Shared.Resources.ManicMiner);
@@ -60,7 +68,10 @@ namespace Casper.Forms {
         }
 
         protected override void OnPaint(PaintEventArgs e) {
-            e.Graphics.DrawImageUnscaled(image, Point.Empty);
+            e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+            e.Graphics.ScaleTransform(2, 2);
+            e.Graphics.FillRectangle(brushes[(int)spectrum.Screen.Border], Screen.OuterRectangle);
+            e.Graphics.DrawImage(image, Screen.InnerRectangle.Location);
         }
 
         protected override void OnPaintBackground(PaintEventArgs e) {}
