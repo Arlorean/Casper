@@ -1,0 +1,44 @@
+﻿@inherits LayoutComponentBase
+@inject CasperBlazor Spectrum
+@inject GamepadList GamePadList
+
+<div class="header-div">
+    <b>Blazor ZX Spectrum Emulator</b>
+</div>
+
+@code {
+    Gamepad gamepad;
+
+    protected override void OnInitialized() {
+        Spectrum.Interrupt += UpdateGamepad;
+        Task.Run(SetupGamepad);
+    }
+
+    async Task SetupGamepad() {
+        while (true) {
+            var gamepads = await GamePadList.GetGamepadsAsync();
+            gamepad = gamepads.FirstOrDefault();
+
+            // 1s poll if not attached, 10s poll if attached
+            await Task.Delay(gamepad == null ? 1000 : 10000);
+        }
+    }
+
+    void UpdateGamepad() {
+        var gamepad = this.gamepad;
+        if (gamepad == null) {
+            return;
+        }
+
+        if (gamepad.Buttons.Count > 0) {
+            Spectrum.Keyboard.OnPhysicalKey(gamepad.Buttons[0].Pressed, Key.SPACE);
+        }
+
+        if (gamepad.Axes.Count > 0) {
+            var axis = gamepad.Axes[0];
+            Spectrum.Keyboard.OnPhysicalKey(axis < -0.9, Key.Q);
+            Spectrum.Keyboard.OnPhysicalKey(axis > +0.9, Key.W);
+            Console.WriteLine(axis);
+        }
+    }
+}

@@ -6,6 +6,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Toolbelt.Blazor.Gamepad" Version="7.0.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Casper.Blazor\Casper.Blazor.csproj" />
     </ItemGroup>
 

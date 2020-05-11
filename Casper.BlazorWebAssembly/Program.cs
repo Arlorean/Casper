@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Toolbelt.Blazor.Extensions.DependencyInjection;
 
 namespace Casper.BlazorWebAssembly {
     public class Program {
@@ -13,6 +14,7 @@ namespace Casper.BlazorWebAssembly {
 
             builder.Services.AddTransient(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
             builder.Services.AddSingleton<CasperBlazor>();
+            builder.Services.AddGamepadList();
 
             await builder.Build().RunAsync();
         }
