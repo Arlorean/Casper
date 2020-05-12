@@ -1,4 +1,4 @@
-﻿using SharpDX.XInput;
+﻿using SharpDX.DirectInput;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -14,7 +14,7 @@ namespace Casper.Forms {
         readonly Graphics graphics;
         readonly Timer timer;
         readonly Image image;
-        Controller controller;
+        Joystick joystick;
 
         public CasperForm() {
             this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.DoubleBuffer, true);
@@ -66,33 +66,54 @@ namespace Casper.Forms {
         }
 
         void InitializeController() {
-            var controllers = new[] { new Controller(UserIndex.One), new Controller(UserIndex.Two), new Controller(UserIndex.Three), new Controller(UserIndex.Four) };
+            var directInput = new DirectInput();
 
-            // Get 1st controller available
-            foreach (var selectControler in controllers) {
-                if (selectControler.IsConnected) {
-                    this.controller = selectControler;
-                    break;
-                }
+            // Find a Gamepad
+            var joystickGuid = directInput.GetDevices(DeviceType.Gamepad, DeviceEnumerationFlags.AllDevices)
+                .Select(d => d.InstanceGuid)
+                .FirstOrDefault();
+
+            // Find a Joystick
+            if (joystickGuid == Guid.Empty) {
+                joystickGuid = directInput.GetDevices(DeviceType.Joystick, DeviceEnumerationFlags.AllDevices)
+                    .Select(d => d.InstanceGuid)
+                    .FirstOrDefault();
+            }
+
+            // Find a FirstPerson controller
+            if (joystickGuid == Guid.Empty) {
+                joystickGuid = directInput.GetDevices(DeviceType.FirstPerson, DeviceEnumerationFlags.AllDevices)
+                    .Select(d => d.InstanceGuid)
+                    .FirstOrDefault();
+            }
+
+            // If Joystick not found, throws an error
+            if (joystickGuid != Guid.Empty) {
+                // Instantiate the joystick
+                this.joystick = new Joystick(directInput, joystickGuid);
+
+                // Acquire the joystick
+                joystick.Acquire();
             }
         }
 
         void UpdateController() {
-            var controller = this.controller;
-            if (controller == null || !controller.IsConnected) {
+            var controller = this.joystick;
+            if (controller == null) {
                 return;
             }
 
-            var gamepad = controller.GetState().Gamepad;
-            spectrum.Keyboard.OnPhysicalKey(gamepad.Buttons.HasFlag(GamepadButtonFlags.A), Key.SPACE);
+            var state = controller.GetCurrentState();
+            spectrum.Keyboard.OnPhysicalKey(state.Buttons[1], Key.SPACE);
 
-            var axis = NormalizeAxis(gamepad.LeftThumbX);
+            var axis = NormalizeAxis(state.X);
             spectrum.Keyboard.OnPhysicalKey(axis < -0.9, Key.Q);
             spectrum.Keyboard.OnPhysicalKey(axis > +0.9, Key.W);
         }
 
-        static float NormalizeAxis(short axis) {
-            return (axis < 0) ? -((float)axis/short.MinValue) : ((float)axis /short.MaxValue);
+        static float NormalizeAxis(int axis) {
+            axis += short.MinValue;
+            return (axis < 0) ? -((float)axis / short.MinValue) : ((float)axis / short.MaxValue);
         }
 
         public void RenderPixel(int x, int y, ColorIndex colorIndex) {
