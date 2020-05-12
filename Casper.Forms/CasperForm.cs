@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpDX.XInput;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -11,8 +12,9 @@ namespace Casper.Forms {
     public class CasperForm : Form {
         readonly Spectrum spectrum;
         readonly Graphics graphics;
-        readonly Timer interrupt;
+        readonly Timer timer;
         readonly Image image;
+        Controller controller;
 
         public CasperForm() {
             this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.DoubleBuffer, true);
@@ -24,10 +26,10 @@ namespace Casper.Forms {
             spectrum = new Spectrum();
             spectrum.Screen.RenderPixel += RenderPixel;
 
-            interrupt = new Timer {
+            timer = new Timer {
                 Interval = 20 // 20ms is 50 interrupts per second
             };
-            interrupt.Tick += Interrupt_Tick;
+            timer.Tick += Timer_Tick;
 
             image = new Bitmap(Screen.Width, Screen.Height);
             graphics = Graphics.FromImage(image);
@@ -36,14 +38,16 @@ namespace Casper.Forms {
             this.Text = "Casper";
             this.ClientSize = Screen.OuterRectangle.Size + Screen.OuterRectangle.Size;
 
+            InitializeController();
+
             spectrum.LoadROM(Casper.Shared.Resources.Spectrum);
             spectrum.LoadSnapshot(Casper.Shared.Resources.ManicMiner);
             Running = true;
         }
 
         public bool Running {
-            get { return interrupt.Enabled; }
-            set { interrupt.Enabled = value; }
+            get { return timer.Enabled; }
+            set { timer.Enabled = value; }
         }
 
         [STAThread]
@@ -55,9 +59,40 @@ namespace Casper.Forms {
 
         static readonly Brush[] brushes = Colors.Palette.Select(c => new SolidBrush(c)).ToArray();
 
-        void Interrupt_Tick(object sender, EventArgs e) {
+        void Timer_Tick(object sender, EventArgs e) {
+            UpdateController();
             spectrum.Step();
             Invalidate();
+        }
+
+        void InitializeController() {
+            var controllers = new[] { new Controller(UserIndex.One), new Controller(UserIndex.Two), new Controller(UserIndex.Three), new Controller(UserIndex.Four) };
+
+            // Get 1st controller available
+            foreach (var selectControler in controllers) {
+                if (selectControler.IsConnected) {
+                    this.controller = selectControler;
+                    break;
+                }
+            }
+        }
+
+        void UpdateController() {
+            var controller = this.controller;
+            if (controller == null || !controller.IsConnected) {
+                return;
+            }
+
+            var gamepad = controller.GetState().Gamepad;
+            spectrum.Keyboard.OnPhysicalKey(gamepad.Buttons.HasFlag(GamepadButtonFlags.A), Key.SPACE);
+
+            var axis = NormalizeAxis(gamepad.LeftThumbX);
+            spectrum.Keyboard.OnPhysicalKey(axis < -0.9, Key.Q);
+            spectrum.Keyboard.OnPhysicalKey(axis > +0.9, Key.W);
+        }
+
+        static float NormalizeAxis(short axis) {
+            return (axis < 0) ? -((float)axis/short.MinValue) : ((float)axis /short.MaxValue);
         }
 
         public void RenderPixel(int x, int y, ColorIndex colorIndex) {
