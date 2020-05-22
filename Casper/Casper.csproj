@@ -7,6 +7,7 @@
     <Description>C# ZX Spectrum Emulator Library</Description>
     <Copyright>Adam Davidson and Andrew Pollard</Copyright>
     <LangVersion>8.0</LangVersion>
+    <WarningsAsErrors>true</WarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup>

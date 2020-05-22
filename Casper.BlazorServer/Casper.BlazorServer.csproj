@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
-        <Nullable>annotations</Nullable>
+      <TargetFramework>netcoreapp3.1</TargetFramework>
+      <Nullable>annotations</Nullable>
+      <WarningsAsErrors>true</WarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>
@@ -10,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Casper.Blazor\Casper.Blazor.csproj" />
+      <ProjectReference Include="..\Casper.Blazor\Casper.Blazor.csproj" />
     </ItemGroup>
 
 </Project>
