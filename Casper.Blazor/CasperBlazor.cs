@@ -51,7 +51,8 @@ namespace Casper.Blazor {
 
         internal void OnKey(KeyboardEventArgs args, bool down) {
             // Emulator control keys
-            switch (args.KeyCode()) {
+            var keyCode = args.KeyCode();
+            switch (keyCode) {
                 case KeyCode.Pause: if (down) { Running = !Running; }; return;
                 case KeyCode.Escape: if (down) { UseLogicalKeyboardLayout = !UseLogicalKeyboardLayout; }; return;
             }
@@ -64,7 +65,13 @@ namespace Casper.Blazor {
                 }
             }
             else {
-                Keyboard.OnPhysicalKey(down, args.KeyCode());
+                Keyboard.OnPhysicalKey(down, keyCode);
+
+                // JavaScript is unable to detect when a shift key is released if the other shift key is still pressed
+                // As a workaround if one is released, release them both
+                if (!down && (keyCode==KeyCode.ShiftLeft || keyCode==KeyCode.ShiftRight)) {
+                    Keyboard.OnPhysicalKeys(down: false, Key.CAPS, Key.SYMB);
+                }
             }
         }
     }
