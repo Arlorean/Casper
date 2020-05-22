@@ -106,6 +106,8 @@ namespace Casper {
                 // Sensible extra Physical keys.
                 case KeyCode.Backspace: OnPhysicalKeys(down, Key.CAPS, Key.D0); break;
                 case KeyCode.Delete: OnPhysicalKeys(down, Key.CAPS, Key.D0); break;
+                case KeyCode.Comma: OnPhysicalKeys(down, Key.SYMB, Key.N); break;
+                case KeyCode.Period: OnPhysicalKeys(down, Key.SYMB, Key.M); break;
 
                 // Key not handled
                 default:
