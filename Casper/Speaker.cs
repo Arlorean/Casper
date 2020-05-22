@@ -5,23 +5,23 @@ using System.Text;
 
 namespace Casper {
     public class Speaker {
-        readonly bool[] samples;
+        double interruptInterval;
+        int tstatesPerInterrupt;
 
-        public event Action<bool[]> PlaySound;
+        /// <summary>
+        /// Called when the speaker is activated.
+        /// The time in seconds since the last interrupt is passed as a parameter.
+        /// </summary>
+        public event Action<double> Activate;
 
-        public Speaker(int numSamples) {
-            samples = new bool[numSamples];
+        internal Speaker(int tstatesPerInterrupt) {
+            this.interruptInterval = TimeSpan.FromMilliseconds(20).TotalSeconds;
+            this.tstatesPerInterrupt = tstatesPerInterrupt;
         }
 
-        public void Beep(int tstates) {
-            samples[tstates] = true;
-        }
-
-        public void FlushBuffer() {
-            if (samples.Any(s => s)) {
-                PlaySound?.Invoke(samples);
-                Array.Clear(samples, 0, samples.Length);
-            }
+        internal void Beep(int tstates) {
+            var time = ((double)tstates / tstatesPerInterrupt)* interruptInterval;
+            Activate?.Invoke(time);
         }
     }
 }

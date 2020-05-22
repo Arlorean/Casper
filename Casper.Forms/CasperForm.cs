@@ -30,7 +30,7 @@ namespace Casper.Forms {
             spectrum.Screen.RenderPixel += RenderPixel;
 
             sound = new Sound(this.Handle);
-            spectrum.Speaker.PlaySound += sound.PlaySound;
+            spectrum.Speaker.Activate += sound.ActivateSpeaker;
 
             timer = new Timer {
                 Interval = TimeSpan.FromMilliseconds(20), // 20ms is 50 interrupts per second
@@ -77,6 +77,7 @@ namespace Casper.Forms {
         void Timer_Tick(object sender, EventArgs e) {
             UpdateController();
             spectrum.Step();
+            sound.FlushBuffer();
             Invalidate();
         }
 

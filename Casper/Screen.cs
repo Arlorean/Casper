@@ -37,7 +37,7 @@ namespace Casper {
         public event Action<ColorIndex> RenderBorder;
         public event Action<int, int, ColorIndex> RenderPixel;
 
-        public void Flash() {
+        internal void Flash() {
             flashInverted = !flashInverted;
 
             if (RenderPixel == null) { return; }

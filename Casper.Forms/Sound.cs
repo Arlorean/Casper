@@ -7,6 +7,7 @@ namespace Casper.Forms {
         readonly DirectSound directSound;
         readonly WaveFormat waveFormat;
         readonly SecondarySoundBuffer buffer;
+        readonly TimeSpan bufferDuration = TimeSpan.FromMilliseconds(20);
         readonly short[] samples;
 
         public Sound(IntPtr formHandle) {
@@ -30,11 +31,10 @@ namespace Casper.Forms {
                 bitsPerSample: wBitsPerSample
             );
 
-            var bufferDurationSeconds = 0.020;//ms
             var bufferDesc = new SoundBufferDescription();
             bufferDesc.Format = waveFormat;
             bufferDesc.BufferBytes = Convert.ToInt32(
-                bufferDurationSeconds * waveFormat.AverageBytesPerSecond / waveFormat.Channels);
+                bufferDuration.TotalSeconds * waveFormat.AverageBytesPerSecond / waveFormat.Channels);
 
             buffer = new SecondarySoundBuffer(directSound, bufferDesc);
 
@@ -42,13 +42,15 @@ namespace Casper.Forms {
             samples = new short[numSamples];
         }
 
-        public void PlaySound(bool[] speaker) {
-            var r = (float)samples.Length / speaker.Length;
-            for (var i=0; i < speaker.Length; ++i) {
-                if (speaker[i]) {
-                    samples[(int)(i * r)] = short.MaxValue;
-                }
+        public void ActivateSpeaker(double time) {
+            var r = time / bufferDuration.TotalSeconds;
+            if (r >= 0 && r < 1) {
+                var i = (int)(r * samples.Length);
+                samples[i] = short.MaxValue;
             }
+        }
+
+        public void FlushBuffer() {
             buffer.Write(samples, 0, LockFlags.None);
             buffer.Play(0, PlayFlags.None);
             Array.Clear(samples, 0, samples.Length);

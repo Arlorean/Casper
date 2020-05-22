@@ -107,8 +107,6 @@ namespace Casper {
                 Screen.Flash();
             }
 
-            Speaker.FlushBuffer();
-
             return base.interrupt();
         }
 
