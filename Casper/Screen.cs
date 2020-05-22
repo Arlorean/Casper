@@ -22,6 +22,7 @@ namespace Casper {
         public const int BorderRight = 48;
         public const int BorderTop = 48;
         public const int BorderBottom = 56;
+        public static readonly Rectangle Rectangle = new Rectangle(0, 0, Width, Height);
         public static readonly Rectangle InnerRectangle = new Rectangle(BorderLeft, BorderTop, Width, Height);
         public static readonly Rectangle OuterRectangle = new Rectangle(0, 0, BorderLeft + Width + BorderRight, BorderTop + Height + BorderBottom);
 

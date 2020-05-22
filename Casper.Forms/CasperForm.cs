@@ -3,8 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 using Timer = MultimediaTimer.Timer;
@@ -14,9 +16,9 @@ namespace Casper.Forms {
     public class CasperForm : Form {
         readonly Spectrum spectrum;
         readonly Sound sound;
-        readonly Graphics graphics;
         readonly Timer timer;
-        readonly Image image;
+        readonly Bitmap bitmap;
+        readonly int[] pixels;
         Joystick joystick;
 
         public CasperForm() {
@@ -37,9 +39,8 @@ namespace Casper.Forms {
             };
             timer.Elapsed += Timer_Tick;
 
-            image = new Bitmap(Screen.Width, Screen.Height);
-            graphics = Graphics.FromImage(image);
-            graphics.Clear(Color.Black);
+            bitmap = new Bitmap(Screen.Width, Screen.Height);
+            pixels = new int[Screen.Width*Screen.Height];
 
             this.Text = "Casper";
             this.ClientSize = Screen.OuterRectangle.Size + Screen.OuterRectangle.Size;
@@ -132,25 +133,18 @@ namespace Casper.Forms {
             return (axis < 0) ? -((float)axis / short.MinValue) : ((float)axis / short.MaxValue);
         }
 
-        object gdiLock = new object();
-
-        public void RenderPixel(int x, int y, ColorIndex colorIndex) {
-
-            var s = 1f;
-            var rect = new RectangleF(x * s, y * s, s, s);
-            lock (gdiLock) {
-                var brush = brushes[(int)colorIndex];
-                graphics.FillRectangle(brush, rect);
-            }
+        void RenderPixel(int x, int y, ColorIndex colorIndex) {
+            pixels[y*Screen.Width+x] = Colors.Palette[(int)colorIndex].ToArgb();
         }
 
         protected override void OnPaint(PaintEventArgs e) {
             e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
             e.Graphics.ScaleTransform(2, 2);
-            lock (gdiLock) {
-                e.Graphics.FillRectangle(brushes[(int)spectrum.Screen.Border], Screen.OuterRectangle);
-                e.Graphics.DrawImage(image, Screen.InnerRectangle.Location);
-            }
+            e.Graphics.FillRectangle(brushes[(int)spectrum.Screen.Border], Screen.OuterRectangle);
+            var data = bitmap.LockBits(Screen.Rectangle, ImageLockMode.WriteOnly, bitmap.PixelFormat);
+            Marshal.Copy(pixels, 0, data.Scan0, pixels.Length);
+            bitmap.UnlockBits(data);
+            e.Graphics.DrawImage(bitmap, Screen.InnerRectangle.Location);
         }
 
         protected override void OnPaintBackground(PaintEventArgs e) {}
