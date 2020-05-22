@@ -7,7 +7,8 @@
       <PlatformTarget>AnyCPU</PlatformTarget>
       <LangVersion>latest</LangVersion>
       <Nullable>annotations</Nullable>
-      <WarningsAsErrors>true</WarningsAsErrors> 
+      <WarningsAsErrors>true</WarningsAsErrors>
+      <ApplicationIcon>Spectrum.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>
