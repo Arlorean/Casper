@@ -11,6 +11,7 @@ namespace Casper.Forms {
     [System.ComponentModel.DesignerCategory("")] // Disable Windows Forms Designer in Visual Studio
     public class CasperForm : Form {
         readonly Spectrum spectrum;
+        readonly Sound sound;
         readonly Graphics graphics;
         readonly Timer timer;
         readonly Image image;
@@ -25,6 +26,9 @@ namespace Casper.Forms {
 
             spectrum = new Spectrum();
             spectrum.Screen.RenderPixel += RenderPixel;
+
+            sound = new Sound(this.Handle);
+            spectrum.Speaker.PlaySound += sound.PlaySound;
 
             timer = new Timer {
                 Interval = 20 // 20ms is 50 interrupts per second
@@ -158,6 +162,12 @@ namespace Casper.Forms {
             // For an AZERTY keyboard when the "A" key is pressed the KeyCode value is Keys.Q.
             if (KeyCodeMap.TryGetValue(args.KeyCode, out var keyCode)) {
                 spectrum.Keyboard.OnPhysicalKey(down, keyCode);
+
+                // Windows is unable to detect when a shift key is released if the other shift key is still pressed
+                // As a workaround if one is released, release them both
+                if (!down && (keyCode == KeyCode.ShiftLeft || keyCode == KeyCode.ShiftRight)) {
+                    spectrum.Keyboard.OnPhysicalKeys(down: false, Key.CAPS, Key.SYMB);
+                }
             }
         }
 

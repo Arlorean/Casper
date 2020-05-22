@@ -21,8 +21,10 @@ namespace Casper {
     public class Spectrum : Z80 {
         public Screen Screen { get; } = new Screen();
         public Keyboard Keyboard { get; } = new Keyboard();
+        public Speaker Speaker { get; }
 
         public Spectrum() : base(3.5) { // Spectrum runs at 3.5Mhz
+            Speaker = new Speaker(tstatesPerInterrupt);
         }
 
         /// <summary>
@@ -37,6 +39,11 @@ namespace Casper {
         public override void outb(int port, int outByte, int tstates) {
             if ((port & 0x0001) == 0) {
                 Screen.Border = (ColorIndex)(outByte & 0x07);
+            }
+            if ((port & 0x00fe) == 0x00fe) {
+                if ((outByte & 0b00010000) != 0) {
+                    Speaker.Beep(tstates + tstatesPerInterrupt);
+                }
             }
         }
 
@@ -99,6 +106,8 @@ namespace Casper {
             if ((interruptCounter % 16) == 0) {
                 Screen.Flash();
             }
+
+            Speaker.FlushBuffer();
 
             return base.interrupt();
         }
