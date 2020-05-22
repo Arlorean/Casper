@@ -131,19 +131,25 @@ namespace Casper.Forms {
             return (axis < 0) ? -((float)axis / short.MinValue) : ((float)axis / short.MaxValue);
         }
 
+        object gdiLock = new object();
+
         public void RenderPixel(int x, int y, ColorIndex colorIndex) {
-            var brush = brushes[(int)colorIndex];
 
             var s = 1f;
             var rect = new RectangleF(x * s, y * s, s, s);
-            graphics.FillRectangle(brush, rect);
+            lock (gdiLock) {
+                var brush = brushes[(int)colorIndex];
+                graphics.FillRectangle(brush, rect);
+            }
         }
 
         protected override void OnPaint(PaintEventArgs e) {
             e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
             e.Graphics.ScaleTransform(2, 2);
-            e.Graphics.FillRectangle(brushes[(int)spectrum.Screen.Border], Screen.OuterRectangle);
-            e.Graphics.DrawImage(image, Screen.InnerRectangle.Location);
+            lock (gdiLock) {
+                e.Graphics.FillRectangle(brushes[(int)spectrum.Screen.Border], Screen.OuterRectangle);
+                e.Graphics.DrawImage(image, Screen.InnerRectangle.Location);
+            }
         }
 
         protected override void OnPaintBackground(PaintEventArgs e) {}
