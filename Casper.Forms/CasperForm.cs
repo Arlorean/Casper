@@ -7,6 +7,8 @@ using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 
+using Timer = MultimediaTimer.Timer;
+
 namespace Casper.Forms {
     [System.ComponentModel.DesignerCategory("")] // Disable Windows Forms Designer in Visual Studio
     public class CasperForm : Form {
@@ -31,9 +33,9 @@ namespace Casper.Forms {
             spectrum.Speaker.PlaySound += sound.PlaySound;
 
             timer = new Timer {
-                Interval = 20 // 20ms is 50 interrupts per second
+                Interval = TimeSpan.FromMilliseconds(20), // 20ms is 50 interrupts per second
             };
-            timer.Tick += Timer_Tick;
+            timer.Elapsed += Timer_Tick;
 
             image = new Bitmap(Screen.Width, Screen.Height);
             graphics = Graphics.FromImage(image);
@@ -50,8 +52,17 @@ namespace Casper.Forms {
         }
 
         public bool Running {
-            get { return timer.Enabled; }
-            set { timer.Enabled = value; }
+            get { return timer.IsRunning; }
+            set {
+                if (value != Running) {
+                    if (value) {
+                        timer.Start();
+                    }
+                    else {
+                        timer.Stop();
+                    }
+                }
+            }
         }
 
         [STAThread]

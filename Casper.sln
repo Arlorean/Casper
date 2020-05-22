@@ -38,6 +38,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "keys", "keys", "{5E0BBEC1-A
 		docs\keys\KeyW.svg = docs\keys\KeyW.svg
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MultimediaTimer", "MultimediaTimer\MultimediaTimer.csproj", "{6DEBC8CB-A358-4736-BBF1-D810199997BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +70,10 @@ Global
 		{921728E8-364E-4C00-97B8-83F06F2FDE23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{921728E8-364E-4C00-97B8-83F06F2FDE23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{921728E8-364E-4C00-97B8-83F06F2FDE23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DEBC8CB-A358-4736-BBF1-D810199997BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DEBC8CB-A358-4736-BBF1-D810199997BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DEBC8CB-A358-4736-BBF1-D810199997BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DEBC8CB-A358-4736-BBF1-D810199997BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

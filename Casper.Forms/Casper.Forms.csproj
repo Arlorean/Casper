@@ -62,6 +62,10 @@
       <Project>{dc088f77-65a7-4257-b9c1-224a4b75978f}</Project>
       <Name>Casper</Name>
     </ProjectReference>
+    <ProjectReference Include="..\MultimediaTimer\MultimediaTimer.csproj">
+      <Project>{6debc8cb-a358-4736-bbf1-d810199997bf}</Project>
+      <Name>MultimediaTimer</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CasperForm.cs" />
