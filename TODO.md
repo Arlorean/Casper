@@ -8,6 +8,7 @@
 
 # Casper - DONE
 
+- [X] TAP loading
 - [X] Sound (Windows Forms)
 - [x] Update favicon and PWA icon
 - [x] Flashing attributes

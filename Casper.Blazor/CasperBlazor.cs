@@ -6,8 +6,6 @@ using System.Timers;
 
 namespace Casper.Blazor {
     public class CasperBlazor : Spectrum {
-        public event Action Interrupt;
-
         Timer timer;
 
         public CasperBlazor() {
@@ -32,7 +30,6 @@ namespace Casper.Blazor {
 
         void Timer_Tick(object sender, EventArgs e) {
             base.Step();
-            Interrupt?.Invoke();
             timer.Start();
         }
 

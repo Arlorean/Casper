@@ -2,20 +2,24 @@
  * @(#)Z80.java 1.1 27/04/97 Adam Davidson & Andrew Pollard
  */
 
-/**
- * <p>The Z80 class emulates the Zilog Z80 microprocessor.</p>
- *
- * @version 1.1 27 Apr 1997
- * @author <A HREF="http://www.odie.demon.co.uk/spectrum">Adam Davidson & Andrew Pollard</A>
- *
- * @see Jasper
- * @see Spectrum
- */
+
 #pragma warning disable IDE1006
 
+using System;
+using System.Collections.Generic;
+/**
+* <p>The Z80 class emulates the Zilog Z80 microprocessor.</p>
+*
+* @version 1.1 27 Apr 1997
+* @author <A HREF="http://www.odie.demon.co.uk/spectrum">Adam Davidson & Andrew Pollard</A>
+*
+* @see Jasper
+* @see Spectrum
+*/
 namespace Casper {
 
     public class Z80 {
+
 
         public Z80(double clockFrequencyInMHz) {
             tstatesPerInterrupt = (int)((clockFrequencyInMHz * 1e6) / 50);
@@ -72,7 +76,7 @@ namespace Casper {
         protected int _IM = 2;
 
         /** Memory */
-        public readonly int[] mem = new int[65536];
+        protected readonly int[] mem = new int[65536];
 
         /** 16 bit register access */
         public int AF() { return (A() << 8) | F(); }
@@ -97,10 +101,7 @@ namespace Casper {
             _HL = word;
         }
 
-        public int PC() { return _PC; }
-        public void PC(int word) {
-            _PC = word;
-        }
+        public int PC { get => _PC; set => _PC = value; }
 
         public int SP() { return _SP; }
         public void SP(int word) {
@@ -242,7 +243,7 @@ namespace Casper {
 
 
         /** sbyte access */
-        private int peekb(int addr) {
+        public int peekb(int addr) {
             return mem[addr];
         }
         public virtual void pokeb(int addr, int newsbyte) {
@@ -256,7 +257,7 @@ namespace Casper {
             addr++;
             pokeb(addr & 0xffff, word >> 8);
         }
-        private int peekw(int addr) {
+        public int peekw(int addr) {
             int t = peekb(addr);
             addr++;
             return t | (peekb(addr & 0xffff) << 8);
@@ -286,33 +287,28 @@ namespace Casper {
 
 
         /** Call stack */
-        public void pushpc() { pushw(PC()); }
-        public void poppc() { PC(popw()); }
+        public void pushpc() { pushw(PC); }
+        public void poppc() { PC = (popw()); }
 
 
         /** Program access */
         private int nxtpcb() {
-            int pc = PC();
+            int pc = PC;
             int t = peekb(pc);
-            PC(++pc & 0xffff);
+            PC = (++pc & 0xffff);
             return t;
         }
         private int nxtpcw() {
-            int pc = PC();
+            int pc = PC;
             int t = peekb(pc);
             t |= (peekb(++pc & 0xffff) << 8);
-            PC(++pc & 0xffff);
+            PC = (++pc & 0xffff);
             return t;
-        }
-
-
-        public virtual void Step() {
-            execute();
         }
 
         /** Reset all registers to power on state */
         public virtual void Reset() {
-            PC(0);
+            PC = (0);
             SP(0);
 
             A(0);
@@ -354,7 +350,11 @@ namespace Casper {
             return (tstates >= 0);
         }
 
-        public virtual int interrupt() {
+        public event Action Interrupt;
+
+        int interrupt() {
+            Interrupt?.Invoke();
+
             // If not a non-maskable interrupt
             if (!IFF1()) {
                 return 0;
@@ -366,29 +366,62 @@ namespace Casper {
                 pushpc();
                 IFF1(false);
                 IFF2(false);
-                PC(56);
+                PC = (56);
                 return 13;
             case IM2:
                 pushpc();
                 IFF1(false);
                 IFF2(false);
                 int t = (I() << 8) | 0x00ff;
-                PC(peekw(t));
+                PC = (peekw(t));
                 return 19;
             }
 
             return 0;
         }
 
+        Dictionary<int, Action<Z80>> watchpoints = new Dictionary<int, Action<Z80>>();
+
+        public void SetWatchpoint(int address, Action<Z80> action) {
+            if (action == null) {
+                watchpoints.Remove(address);
+            }
+            else {
+                watchpoints[address] = action;
+            }
+        }
+
+        public void ClearWatchpoint(int address) {
+            SetWatchpoint(address, null);
+        }
+
+        void HandleWatchpoints() {
+            if (watchpoints.Count > 0 && watchpoints.TryGetValue(PC, out var watch)) {
+                watch(this);
+            }
+        }
+
+        public void LoadBytes(int address, byte[] bytes) {
+            for (var i=0; i < bytes.Length; ++i) {
+                pokeb(address + i, bytes[i]);
+                mem[address+i] = bytes[i];
+            }
+        }
+
+        public void Steps(int n) {
+            for (var i=0; i < n; ++i) {
+                Step();
+            }
+        }
 
         int local_tstates;
 
         /** Z80 fetch/execute loop */
-        void execute() {
+        public void Step() {
             local_tstates -= tstatesPerInterrupt;
 
             while (true) {
-
+                HandleWatchpoints();
                 if (interruptTriggered(local_tstates)) {
                     local_tstates -= interrupt();
                     return;
@@ -416,11 +449,11 @@ namespace Casper {
                         B(b = qdec8(B()));
                         if (b != 0) {
                             sbyte d = (sbyte)nxtpcb();
-                            PC((PC() + d) & 0xffff);
+                            PC = ((PC+ d) & 0xffff);
                             local_tstates += (13);
                         }
                         else {
-                            PC(inc16(PC()));
+                            PC = (inc16(PC));
                             local_tstates += (8);
                         }
                         break;
@@ -428,7 +461,7 @@ namespace Casper {
                 case 24: /* JR dis */
                 {
                         sbyte d = (sbyte)nxtpcb();
-                        PC((PC() + d) & 0xffff);
+                        PC = ((PC+ d) & 0xffff);
                         local_tstates += (12);
                         break;
                     }
@@ -437,11 +470,11 @@ namespace Casper {
                 {
                         if (!Zset()) {
                             sbyte d = (sbyte)nxtpcb();
-                            PC((PC() + d) & 0xffff);
+                            PC = ((PC+ d) & 0xffff);
                             local_tstates += (12);
                         }
                         else {
-                            PC(inc16(PC()));
+                            PC = (inc16(PC));
                             local_tstates += (7);
                         }
                         break;
@@ -450,11 +483,11 @@ namespace Casper {
                 {
                         if (Zset()) {
                             sbyte d = (sbyte)nxtpcb();
-                            PC((PC() + d) & 0xffff);
+                            PC = ((PC+ d) & 0xffff);
                             local_tstates += (12);
                         }
                         else {
-                            PC(inc16(PC()));
+                            PC = (inc16(PC));
                             local_tstates += (7);
                         }
                         break;
@@ -463,11 +496,11 @@ namespace Casper {
                 {
                         if (!Cset()) {
                             sbyte d = (sbyte)nxtpcb();
-                            PC((PC() + d) & 0xffff);
+                            PC = ((PC+ d) & 0xffff);
                             local_tstates += (12);
                         }
                         else {
-                            PC(inc16(PC()));
+                            PC = (inc16(PC));
                             local_tstates += (7);
                         }
                         break;
@@ -476,11 +509,11 @@ namespace Casper {
                 {
                         if (Cset()) {
                             sbyte d = (sbyte)nxtpcb();
-                            PC((PC() + d) & 0xffff);
+                            PC = ((PC+ d) & 0xffff);
                             local_tstates += (12);
                         }
                         else {
-                            PC(inc16(PC()));
+                            PC = (inc16(PC));
                             local_tstates += (7);
                         }
                         break;
@@ -1058,7 +1091,7 @@ namespace Casper {
                 case 225:    /* POP HL */
                 { HL(popw()); local_tstates += (10); break; }
                 case 233: /* JP (HL) */
-                { PC(HL()); local_tstates += (4); break; }
+                { PC = (HL()); local_tstates += (4); break; }
                 case 241:    /* POP AF */
                 { AF(popw()); local_tstates += (10); break; }
                 case 249:    /* LD SP,HL */
@@ -1068,10 +1101,10 @@ namespace Casper {
                 case 194:    /* JP NZ,nn */
                 {
                         if (!Zset()) {
-                            PC(nxtpcw());
+                            PC = (nxtpcw());
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                         }
                         local_tstates += (10);
                         break;
@@ -1079,10 +1112,10 @@ namespace Casper {
                 case 202:    /* JP Z,nn */
                 {
                         if (Zset()) {
-                            PC(nxtpcw());
+                            PC = (nxtpcw());
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                         }
                         local_tstates += (10);
                         break;
@@ -1090,10 +1123,10 @@ namespace Casper {
                 case 210:    /* JP NC,nn */
                 {
                         if (!Cset()) {
-                            PC(nxtpcw());
+                            PC = (nxtpcw());
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                         }
                         local_tstates += (10);
                         break;
@@ -1101,10 +1134,10 @@ namespace Casper {
                 case 218:    /* JP C,nn */
                 {
                         if (Cset()) {
-                            PC(nxtpcw());
+                            PC = (nxtpcw());
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                         }
                         local_tstates += (10);
                         break;
@@ -1112,10 +1145,10 @@ namespace Casper {
                 case 226:    /* JP PO,nn */
                 {
                         if (!PVset()) {
-                            PC(nxtpcw());
+                            PC = (nxtpcw());
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                         }
                         local_tstates += (10);
                         break;
@@ -1123,10 +1156,10 @@ namespace Casper {
                 case 234:    /* JP PE,nn */
                 {
                         if (PVset()) {
-                            PC(nxtpcw());
+                            PC = (nxtpcw());
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                         }
                         local_tstates += (10);
                         break;
@@ -1134,10 +1167,10 @@ namespace Casper {
                 case 242:    /* JP P,nn */
                 {
                         if (!Sset()) {
-                            PC(nxtpcw());
+                            PC = (nxtpcw());
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                         }
                         local_tstates += (10);
                         break;
@@ -1145,10 +1178,10 @@ namespace Casper {
                 case 250:    /* JP M,nn */
                 {
                         if (Sset()) {
-                            PC(nxtpcw());
+                            PC = (nxtpcw());
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                         }
                         local_tstates += (10);
                         break;
@@ -1157,7 +1190,7 @@ namespace Casper {
 
                 /* Various */
                 case 195:    /* JP nn */
-                { PC(peekw(PC())); local_tstates += (10); break; }
+                { PC = (peekw(PC)); local_tstates += (10); break; }
                 case 203:    /* prefix CB */
                 { local_tstates += execute_cb(); break; }
                 case 211:    /* OUT (n),A */
@@ -1210,11 +1243,11 @@ namespace Casper {
                         if (!Zset()) {
                             int t = nxtpcw();
                             pushpc();
-                            PC(t);
+                            PC = (t);
                             local_tstates += (17);
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                             local_tstates += (10);
                         }
                         break;
@@ -1224,11 +1257,11 @@ namespace Casper {
                         if (Zset()) {
                             int t = nxtpcw();
                             pushpc();
-                            PC(t);
+                            PC = (t);
                             local_tstates += (17);
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                             local_tstates += (10);
                         }
                         break;
@@ -1238,11 +1271,11 @@ namespace Casper {
                         if (!Cset()) {
                             int t = nxtpcw();
                             pushpc();
-                            PC(t);
+                            PC = (t);
                             local_tstates += (17);
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                             local_tstates += (10);
                         }
                         break;
@@ -1252,11 +1285,11 @@ namespace Casper {
                         if (Cset()) {
                             int t = nxtpcw();
                             pushpc();
-                            PC(t);
+                            PC = (t);
                             local_tstates += (17);
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                             local_tstates += (10);
                         }
                         break;
@@ -1266,11 +1299,11 @@ namespace Casper {
                         if (!PVset()) {
                             int t = nxtpcw();
                             pushpc();
-                            PC(t);
+                            PC = (t);
                             local_tstates += (17);
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                             local_tstates += (10);
                         }
                         break;
@@ -1280,11 +1313,11 @@ namespace Casper {
                         if (PVset()) {
                             int t = nxtpcw();
                             pushpc();
-                            PC(t);
+                            PC = (t);
                             local_tstates += (17);
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                             local_tstates += (10);
                         }
                         break;
@@ -1294,11 +1327,11 @@ namespace Casper {
                         if (!Sset()) {
                             int t = nxtpcw();
                             pushpc();
-                            PC(t);
+                            PC = (t);
                             local_tstates += (17);
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                             local_tstates += (10);
                         }
                         break;
@@ -1308,11 +1341,11 @@ namespace Casper {
                         if (Sset()) {
                             int t = nxtpcw();
                             pushpc();
-                            PC(t);
+                            PC = (t);
                             local_tstates += (17);
                         }
                         else {
-                            PC((PC() + 2) & 0xffff);
+                            PC = ((PC+ 2) & 0xffff);
                             local_tstates += (10);
                         }
                         break;
@@ -1325,7 +1358,7 @@ namespace Casper {
                 {
                         int t = nxtpcw();
                         pushpc();
-                        PC(t);
+                        PC = (t);
                         local_tstates += (17);
                         break;
                     }
@@ -1372,21 +1405,21 @@ namespace Casper {
 
                 /* RST n */
                 case 199:    /* RST 0 */
-                { pushpc(); PC(0); local_tstates += (11); break; }
+                { pushpc(); PC = (0); local_tstates += (11); break; }
                 case 207:    /* RST 8 */
-                { pushpc(); PC(8); local_tstates += (11); break; }
+                { pushpc(); PC = (8); local_tstates += (11); break; }
                 case 215:    /* RST 16 */
-                { pushpc(); PC(16); local_tstates += (11); break; }
+                { pushpc(); PC = (16); local_tstates += (11); break; }
                 case 223:    /* RST 24 */
-                { pushpc(); PC(24); local_tstates += (11); break; }
+                { pushpc(); PC = (24); local_tstates += (11); break; }
                 case 231:    /* RST 32 */
-                { pushpc(); PC(32); local_tstates += (11); break; }
+                { pushpc(); PC = (32); local_tstates += (11); break; }
                 case 239:    /* RST 40 */
-                { pushpc(); PC(40); local_tstates += (11); break; }
+                { pushpc(); PC = (40); local_tstates += (11); break; }
                 case 247:    /* RST 48 */
-                { pushpc(); PC(48); local_tstates += (11); break; }
+                { pushpc(); PC = (48); local_tstates += (11); break; }
                 case 255:    /* RST 56 */
-                { pushpc(); PC(56); local_tstates += (11); break; }
+                { pushpc(); PC = (56); local_tstates += (11); break; }
 
                 }
 
@@ -1780,7 +1813,7 @@ namespace Casper {
                         }
                     } while (count != 0);
                     if (count != 0) {
-                        PC((PC() - 2) & 0xffff);
+                        PC = ((PC- 2) & 0xffff);
                         setH(false);
                         setN(false);
                         setPV(true);
@@ -1810,7 +1843,7 @@ namespace Casper {
                     setPV(pv);
                     setC(c);
                     if (pv && !Zset()) {
-                        PC((PC() - 2) & 0xffff);
+                        PC = ((PC- 2) & 0xffff);
                         return (21);
                     }
                     return (16);
@@ -1825,7 +1858,7 @@ namespace Casper {
                     setZ(true);
                     setN(true);
                     if (b != 0) {
-                        PC((PC() - 2) & 0xffff);
+                        PC = ((PC- 2) & 0xffff);
                         return (21);
                     }
                     return (16);
@@ -1840,7 +1873,7 @@ namespace Casper {
                     setZ(true);
                     setN(true);
                     if (b != 0) {
-                        PC((PC() - 2) & 0xffff);
+                        PC = ((PC- 2) & 0xffff);
                         return (21);
                     }
                     return (16);
@@ -1869,7 +1902,7 @@ namespace Casper {
                         }
                     } while (count != 0);
                     if (count != 0) {
-                        PC((PC() - 2) & 0xffff);
+                        PC = ((PC- 2) & 0xffff);
                         setH(false);
                         setN(false);
                         setPV(true);
@@ -1899,7 +1932,7 @@ namespace Casper {
                     setPV(pv);
                     setC(c);
                     if (pv && !Zset()) {
-                        PC((PC() - 2) & 0xffff);
+                        PC = ((PC- 2) & 0xffff);
                         return (21);
                     }
                     return (16);
@@ -1914,7 +1947,7 @@ namespace Casper {
                     setZ(true);
                     setN(true);
                     if (b != 0) {
-                        PC((PC() - 2) & 0xffff);
+                        PC = ((PC- 2) & 0xffff);
                         return (21);
                     }
                     return (16);
@@ -1929,7 +1962,7 @@ namespace Casper {
                     setZ(true);
                     setN(true);
                     if (b != 0) {
-                        PC((PC() - 2) & 0xffff);
+                        PC = ((PC- 2) & 0xffff);
                         return (21);
                     }
                     return (16);
@@ -2785,7 +2818,7 @@ namespace Casper {
             case 246:
             case 247:
             case 248: {
-                    PC(dec16(PC()));
+                    PC = (dec16(PC));
                     REFRESH(-1);
                     return (4);
                 }
@@ -2985,7 +3018,7 @@ namespace Casper {
             { ID(popw()); return (14); }
 
             case 233: /* JP (ID) */
-            { PC(ID()); return (8); }
+            { PC = (ID()); return (8); }
 
             case 249: /* LD SP,ID */
             { SP(ID()); return (10); }

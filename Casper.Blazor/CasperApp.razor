@@ -12,13 +12,23 @@
 </Router>
 
 @code {
+    System.Timers.Timer timer;
+
     protected override void OnAfterRender(bool firstRender) {
         if (firstRender) {
-            if (!Spectrum.Running) {
-                Spectrum.LoadROM(Casper.Shared.Resources.Spectrum);
-                Spectrum.LoadSnapshot(Casper.Shared.Resources.ManicMiner);
-                Spectrum.Running = true;
-            }
+            timer = new System.Timers.Timer();
+            timer.Interval = 1; // Set to 5000 to allow WebAssembly debugger to connect
+            timer.Elapsed += (o, a) => StartSpectrum();
+            timer.AutoReset = false;
+            timer.Start();
+        }
+    }
+
+    void StartSpectrum() {
+        if (!Spectrum.Running) {
+            Spectrum.LoadROM(Casper.Resources.Get(Casper.Shared.Resources.Assembly, @"Resources\Spectrum.rom"));
+            Spectrum.Load(new Casper.FileFormats.Tap(Casper.Resources.Get(Casper.Shared.Resources.Assembly, @"Resources\Games\ManicMiner.tap")));
+            Spectrum.Running = true;
         }
     }
 }

@@ -47,8 +47,8 @@ namespace Casper.Forms {
 
             InitializeController();
 
-            spectrum.LoadROM(Casper.Shared.Resources.Spectrum);
-            spectrum.LoadSnapshot(Casper.Shared.Resources.ManicMiner);
+            spectrum.LoadROM(Resources.Get(Shared.Resources.Assembly, @"Resources\Spectrum.rom"));
+            spectrum.Load(new FileFormats.Tap(Resources.Get(Shared.Resources.Assembly, @"Resources\Games\ManicMiner.tap")));
             Running = true;
         }
 
@@ -403,9 +403,9 @@ namespace Casper.Forms {
         const int VK_CONTROL = 0x11;
 
         protected override bool ProcessKeyMessage(ref Message m) {
-            if ((m.Msg == WM_KEYDOWN || m.Msg == WM_KEYUP) && ((int)m.WParam == VK_CONTROL || (int)m.WParam == VK_SHIFT)) {
+            if ((m.Msg == WM_KEYDOWN || m.Msg == WM_KEYUP) && ((ulong)m.WParam == VK_CONTROL || (ulong)m.WParam == VK_SHIFT)) {
                 Keys? key = null;
-                switch (((int)m.LParam >> 16) & 0x1FF) {
+                switch (((ulong)m.LParam >> 16) & 0x1FF) {
                     case LControl: key = Keys.LControlKey; break;
                     case RControl: key = Keys.RControlKey; break;
                     case LShift: key = Keys.LShiftKey; break;

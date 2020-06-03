@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace Casper {
     public class Keyboard {
         readonly byte[] banks = new byte[8];
 
-        public Keyboard() {
+        public Keyboard(Spectrum spectrum) {
             Reset();
+
+            spectrum.Interrupt += ProcessLogicalKeys;
         }
 
         public void Reset() {
@@ -16,25 +19,16 @@ namespace Casper {
             }
         }
 
-        string logicalKeys = string.Empty;
-        int? nextLogicalKey;
+        public const int LogicKeyInterruptCount = 4;
+
+        Queue<char> logicalKeyQueue = new Queue<char>();
 
         public void ProcessLogicalKeys() {
-            // Nothing to process
-            if (!nextLogicalKey.HasValue) {
-                return;
-            }
-            // Process key up from previous process
-            if (nextLogicalKey == logicalKeys.Length) {
+            if (logicalKeyQueue.Count > 0) {
                 Reset();
-                logicalKeys = string.Empty;
-                nextLogicalKey = null;
-            }
-            // Process next logical key
-            else { 
-                var keys = GetKeys(logicalKeys[nextLogicalKey.Value]);
-                OnPhysicalKeys(down:true, keys);
-                nextLogicalKey++;
+                var logicalKey = logicalKeyQueue.Dequeue();
+                var physicalKeys = GetKeys(logicalKey);
+                OnPhysicalKeys(down:true, physicalKeys);
             }
         }
 
@@ -43,9 +37,16 @@ namespace Casper {
         /// </summary>
         /// <param name="logicalKeys">Sequence of characters to be pressed, once after the other.</param>
         public void OnLogicalKeys(string logicalKeys) {
-            this.logicalKeys = logicalKeys ?? string.Empty;
-            this.nextLogicalKey = 0;
-            Reset();
+            foreach (var c in logicalKeys) {
+                // Key(s) down
+                for (var i = 0; i < LogicKeyInterruptCount; ++i) {
+                    logicalKeyQueue.Enqueue(c);
+                }
+                // Key(s) up
+                for (var i = 0; i < LogicKeyInterruptCount; ++i) {
+                    logicalKeyQueue.Enqueue(char.MinValue);
+                }
+            }
         }
 
         public bool OnPhysicalKey(bool down, KeyCode keyCode) {

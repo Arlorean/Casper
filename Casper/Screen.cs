@@ -13,6 +13,7 @@ namespace Casper {
         readonly byte[,] pixels = new byte[32, 192];
         readonly byte[,] colors = new byte[32, 24];
         bool flashInverted;
+        int flashCounter;
 
         // http://www.zxdesign.info/vidparam.shtml
         // https://www.worldofspectrum.org/faq/reference/48kreference.htm#ZXSpectrum
@@ -26,6 +27,10 @@ namespace Casper {
         public static readonly Rectangle InnerRectangle = new Rectangle(BorderLeft, BorderTop, Width, Height);
         public static readonly Rectangle OuterRectangle = new Rectangle(0, 0, BorderLeft + Width + BorderRight, BorderTop + Height + BorderBottom);
 
+        public Screen(Spectrum spectrum) {
+            spectrum.Interrupt += UpdateFlash;
+        }
+
         public ColorIndex Border {
             get { return border; }
             set {
@@ -38,7 +43,15 @@ namespace Casper {
         public event Action<ColorIndex> RenderBorder;
         public event Action<int, int, ColorIndex> RenderPixel;
 
-        internal void Flash() {
+        void UpdateFlash() {
+            // Characters flash every 16 frames (16/50s = 0.32s)
+            // https://www.worldofspectrum.org/faq/reference/48kreference.htm#ZXSpectrum
+            if ((flashCounter++ % 16) == 0) {
+                Flash();
+            }
+        }
+
+        void Flash() {
             flashInverted = !flashInverted;
 
             if (RenderPixel == null) { return; }

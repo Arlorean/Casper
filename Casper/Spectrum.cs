@@ -1,6 +1,7 @@
 /*
  * @(#)Spectrum.java 1.1 27/04/97 Adam Davidson & Andrew Pollard
  */
+using Casper.FileFormats;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -19,12 +20,14 @@ namespace Casper {
     /// on/off. There is no sound support in this version.
     /// </summary>
     public class Spectrum : Z80 {
-        public Screen Screen { get; } = new Screen();
-        public Keyboard Keyboard { get; } = new Keyboard();
+        public Screen Screen { get; }
+        public Keyboard Keyboard { get; }
         public Speaker Speaker { get; }
 
         public Spectrum() : base(3.5) { // Spectrum runs at 3.5Mhz
             Speaker = new Speaker(tstatesPerInterrupt);
+            Screen = new Screen(this);
+            Keyboard = new Keyboard(this);
         }
 
         /// <summary>
@@ -50,7 +53,7 @@ namespace Casper {
         /** Byte access */
         public override void pokeb(int addr, int newByte) {
             if (addr >= (22528 + 768)) {
-                mem[addr] = newByte;
+                base.pokeb(addr, newByte);
                 return;
             }
 
@@ -58,18 +61,18 @@ namespace Casper {
                 return;
             }
 
-            if (mem[addr] != newByte) {
+            if (peekb(addr) != newByte) {
                 Screen.UpdateByte(addr, (byte)newByte);
-                mem[addr] = newByte;
+                base.pokeb(addr, newByte);
             }
         }
 
         // Word access
         public override void pokew(int addr, int word) {
             if (addr >= (22528 + 768)) {
-                mem[addr] = word & 0xff;
+                base.pokeb(addr, word & 0xff);
                 if (++addr != 65536) {
-                    mem[addr] = word >> 8;
+                    base.pokeb(addr, word >> 8);
                 }
                 return;
             }
@@ -79,40 +82,21 @@ namespace Casper {
             }
 
             int newByte0 = word & 0xff;
-            if (mem[addr] != newByte0) {
+            if (peekb(addr) != newByte0) {
                 Screen.UpdateByte(addr, (byte)newByte0);
-                mem[addr] = newByte0;
+                base.pokeb(addr, newByte0);
             }
 
             int newByte1 = word >> 8;
             if (++addr != (22528 + 768)) {
-                if (mem[addr] != newByte1) {
+                if (peekb(addr) != newByte1) {
                     Screen.UpdateByte(addr, (byte)newByte1);
-                    mem[addr] = newByte1;
+                    base.pokeb(addr, newByte1);
                 }
             }
             else {
-                mem[addr] = newByte1;
+                base.pokeb(addr, newByte1);
             }
-        }
-
-        private int interruptCounter = 0;
-
-        public override int interrupt() {
-            interruptCounter++;
-
-            // Characters flash every 16 frames (16/50s = 0.32s)
-            // https://www.worldofspectrum.org/faq/reference/48kreference.htm#ZXSpectrum
-            if ((interruptCounter % 16) == 0) {
-                Screen.Flash();
-            }
-
-            return base.interrupt();
-        }
-
-        public override void Step() {
-            Keyboard.ProcessLogicalKeys();
-            base.Step();
         }
 
         public override void Reset() {
@@ -132,11 +116,9 @@ namespace Casper {
         public void RefreshScreen() {
             Screen.UpdateBorder(Screen.Border);
             for (var addr = 16384; addr < 22528+768; ++addr) {
-                Screen.UpdateByte(addr, (byte)mem[addr]);
+                Screen.UpdateByte(addr, (byte)peekb(addr));
             }
         }
-
-
 
         public void LoadSnapshot(byte[] bytes) {
             // Crude check but it'll work (SNA is a fixed size)
@@ -149,8 +131,7 @@ namespace Casper {
         }
 
         public void LoadROM(byte[] bytes) {
-            using var stream = new MemoryStream(bytes);
-            ReadBytes(stream, mem, 0, 16384);
+            LoadBytes(0, bytes);
         }
 
         public void LoadSNA(byte[] bytes) {
@@ -228,7 +209,7 @@ namespace Casper {
             L(header[4]);
             H(header[5]);
 
-            PC(header[6] | (header[7] << 8));
+            PC = (header[6] | (header[7] << 8));
             SP(header[8] | (header[9] << 8));
 
             I(header[10]);
@@ -283,7 +264,7 @@ namespace Casper {
                 break;
             }
 
-            if (PC() == 0) {
+            if (PC== 0) {
                 LoadZ80_extended(stream, bytesLeft);
             }
             else
@@ -352,7 +333,7 @@ namespace Casper {
             int[] header = new int[23];
             bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
-            PC(header[0] | (header[1] << 8));
+            PC = (header[0] | (header[1] << 8));
 
             /* 0 - 48K
              * 1 - 48K + IF1
@@ -378,7 +359,7 @@ namespace Casper {
             int[] header = new int[54];
             bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
-            PC(header[0] | (header[1] << 8));
+            PC = (header[0] | (header[1] << 8));
 
             /* 0 - 48K
              * 1 - 48K + IF1
@@ -406,7 +387,7 @@ namespace Casper {
             int[] header = new int[58];
             bytesLeft -= ReadBytes(stream, header, 0, header.Length);
 
-            PC(header[0] | (header[1] << 8));
+            PC = (header[0] | (header[1] << 8));
 
             /* 0 - 48K
              * 1 - 48K + IF1
