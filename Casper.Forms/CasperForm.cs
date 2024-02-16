@@ -98,11 +98,12 @@ namespace Casper.Forms {
             }
 
             // Find a FirstPerson controller
-            if (joystickGuid == Guid.Empty) {
-                joystickGuid = directInput.GetDevices(DeviceType.FirstPerson, DeviceEnumerationFlags.AllDevices)
-                    .Select(d => d.InstanceGuid)
-                    .FirstOrDefault();
-            }
+            // FIXME: This finds my 3DCONNEXION SpaceMouse which doesn't work as expected
+            //if (joystickGuid == Guid.Empty) {
+            //    joystickGuid = directInput.GetDevices(DeviceType.FirstPerson, DeviceEnumerationFlags.AllDevices)
+            //        .Select(d => d.InstanceGuid)
+            //        .FirstOrDefault();
+            //}
 
             // If Joystick not found, throws an error
             if (joystickGuid != Guid.Empty) {
@@ -166,8 +167,9 @@ namespace Casper.Forms {
         void OnPhysicalKey(KeyEventArgs args, bool down) {
             // Emulator control keys
             switch (args.KeyCode) {
-                case Keys.Pause: if (down) { Running = !Running; }; return;
-                case Keys.Escape: if (down) { UseLogicalKeyboardLayout = !UseLogicalKeyboardLayout; }; return;
+            case Keys.Pause: if (down) { Running = !Running; }; return;
+            case Keys.Escape: if (down) { UseLogicalKeyboardLayout = !UseLogicalKeyboardLayout; }; return;
+            case Keys.Home: if (down) { Clipboard.SetText(UnicodeDisplay.ToUnicode(spectrum.Screen)); } return;
             }
 
             // KeyCode is the PHYSICAL key pressed so Keys.Q would be the first letter on the first row of letters.

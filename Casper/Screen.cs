@@ -31,6 +31,9 @@ namespace Casper {
             spectrum.Interrupt += UpdateFlash;
         }
 
+        public byte GetPixels(int xChar, int yPixel) { return pixels[xChar, yPixel]; }
+        public byte GetColors(int xChar, int yChar) { return pixels[xChar, yChar]; }
+
         public ColorIndex Border {
             get { return border; }
             set {

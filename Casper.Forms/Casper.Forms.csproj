@@ -2,7 +2,7 @@
 
     <PropertyGroup>
       <OutputType>WinExe</OutputType>
-      <TargetFrameworks>net462;netcoreapp3.0</TargetFrameworks>
+      <TargetFrameworks>net462;net8.0-windows</TargetFrameworks>
       <UseWindowsForms>true</UseWindowsForms>
       <PlatformTarget>AnyCPU</PlatformTarget>
       <LangVersion>latest</LangVersion>

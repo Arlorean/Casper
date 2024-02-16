@@ -174,6 +174,10 @@ namespace Casper {
                 if ((port & 0x0100) == 0) { res &= banks[0]; }
             }
 
+            if (res != 0xff) {
+
+            }
+
             return (res);
         }
 
