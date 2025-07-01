@@ -6,8 +6,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\Games\ManicMiner.tap" />
-    <EmbeddedResource Include="Resources\Games\ManicMiner.z80" />
-    <EmbeddedResource Include="Resources\Spectrum.rom" />
+    <EmbeddedResource Include="Resources\Roms\48.rom" />
+    <EmbeddedResource Include="Resources\Runes\Octants.txt" />
   </ItemGroup>
 
 </Project>

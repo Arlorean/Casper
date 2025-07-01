@@ -21,13 +21,15 @@ namespace Casper {
     /// </summary>
     public class Spectrum : Z80 {
         public Screen Screen { get; }
+        public Border Border { get; }
         public Keyboard Keyboard { get; }
         public Speaker Speaker { get; }
 
         public Spectrum() : base(3.5) { // Spectrum runs at 3.5Mhz
-            Speaker = new Speaker(tstatesPerInterrupt);
             Screen = new Screen(this);
+            Border = new Border();
             Keyboard = new Keyboard(this);
+            Speaker = new Speaker(tstatesPerInterrupt);
         }
 
         /// <summary>
@@ -41,7 +43,7 @@ namespace Casper {
         }
         public override void outb(int port, int outByte, int tstates) {
             if ((port & 0x0001) == 0) {
-                Screen.Border = (ColorIndex)(outByte & 0x07);
+                Border.SetBorder((ColorIndex16)(outByte & 0x07));
             }
             if ((port & 0x00fe) == 0x00fe) {
                 if ((outByte & 0b00010000) != 0) {
@@ -62,7 +64,7 @@ namespace Casper {
             }
 
             if (peekb(addr) != newByte) {
-                Screen.UpdateByte(addr, (byte)newByte);
+                Screen.SetMemory(addr, (byte)newByte);
                 base.pokeb(addr, newByte);
             }
         }
@@ -83,14 +85,14 @@ namespace Casper {
 
             int newByte0 = word & 0xff;
             if (peekb(addr) != newByte0) {
-                Screen.UpdateByte(addr, (byte)newByte0);
+                Screen.SetMemory(addr, (byte)newByte0);
                 base.pokeb(addr, newByte0);
             }
 
             int newByte1 = word >> 8;
             if (++addr != (22528 + 768)) {
                 if (peekb(addr) != newByte1) {
-                    Screen.UpdateByte(addr, (byte)newByte1);
+                    Screen.SetMemory(addr, (byte)newByte1);
                     base.pokeb(addr, newByte1);
                 }
             }
@@ -114,10 +116,10 @@ namespace Casper {
         public bool showStats = true;
 
         public void RefreshScreen() {
-            Screen.UpdateBorder(Screen.Border);
-            for (var addr = 16384; addr < 22528+768; ++addr) {
-                Screen.UpdateByte(addr, (byte)peekb(addr));
-            }
+            // Screen.UpdateBorder(Screen.Border);
+            // for (var addr = 16384; addr < 22528+768; ++addr) {
+            //     Screen.UpdateByte(addr, (byte)peekb(addr));
+            // }
         }
 
         public void LoadSnapshot(byte[] bytes) {

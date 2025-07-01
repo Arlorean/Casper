@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Text;
 
 namespace Casper {
     /// <summary>
@@ -9,42 +6,27 @@ namespace Casper {
     /// http://www.zxdesign.info/memoryToScreen.shtml
     /// </summary>
     public class Screen {
-        ColorIndex border = ColorIndex.Black;
-        readonly byte[,] pixels = new byte[32, 192];
-        readonly byte[,] colors = new byte[32, 24];
+        readonly byte[,] pixels = new byte[AttrsWide, PixelsHigh];
+        readonly byte[,] attrs = new byte[AttrsWide, AttrsHigh];
         bool flashInverted;
         int flashCounter;
 
         // http://www.zxdesign.info/vidparam.shtml
         // https://www.worldofspectrum.org/faq/reference/48kreference.htm#ZXSpectrum
-        public const int Width = 256;
-        public const int Height = 192;
-        public const int BorderLeft = 48;
-        public const int BorderRight = 48;
-        public const int BorderTop = 48;
-        public const int BorderBottom = 56;
-        public static readonly Rectangle Rectangle = new Rectangle(0, 0, Width, Height);
-        public static readonly Rectangle InnerRectangle = new Rectangle(BorderLeft, BorderTop, Width, Height);
-        public static readonly Rectangle OuterRectangle = new Rectangle(0, 0, BorderLeft + Width + BorderRight, BorderTop + Height + BorderBottom);
+        public const int PixelsWide = 256;
+        public const int PixelsHigh = 192;
+        public const int AttrsWide = PixelsWide / 8;
+        public const int AttrsHigh = PixelsHigh / 8;
+
 
         public Screen(Spectrum spectrum) {
             spectrum.Interrupt += UpdateFlash;
         }
 
-        public byte GetPixels(int xChar, int yPixel) { return pixels[xChar, yPixel]; }
-        public byte GetColors(int xChar, int yChar) { return pixels[xChar, yChar]; }
+        public byte GetByte(int xChar, int yPixel) { return pixels[xChar, yPixel]; }
+        public byte GetAttr(int xChar, int yChar) { return attrs[xChar, yChar]; }
 
-        public ColorIndex Border {
-            get { return border; }
-            set {
-                if (border != value) {
-                    UpdateBorder(value);
-                }
-            }
-        }
-
-        public event Action<ColorIndex> RenderBorder;
-        public event Action<int, int, ColorIndex> RenderPixel;
+        public event Action<int, int, ColorIndex16> RenderPixel;
 
         void UpdateFlash() {
             // Characters flash every 16 frames (16/50s = 0.32s)
@@ -61,7 +43,7 @@ namespace Casper {
 
             for (var cy = 0; cy < 24; cy++) {
                 for (var cx = 0; cx < 32; ++cx) {
-                    var attr = colors[cx, cy];
+                    var attr = attrs[cx, cy];
                     if (attr.IsBit7Set()) {
                         RenderAttr(cx, cy, attr);
                     }
@@ -69,12 +51,7 @@ namespace Casper {
             }
         }
 
-        internal void UpdateBorder(ColorIndex border) {
-            this.border = border;
-            RenderBorder?.Invoke(border);
-        }
-
-        internal void UpdateByte(int address, byte value) {
+        public void SetMemory(int address, byte value) {
             if (RenderPixel == null) { return; }
 
             if (address < (16384+(32*192))) {
@@ -85,20 +62,17 @@ namespace Casper {
             }
         }
 
+
         void UpdatePixels(int address, byte newValue) {
-            // http://www.zxdesign.info/memoryToScreen.shtml
-            var cx = (address & 0b000_00_000_000_11111);
-            var py = ((address & 0b000_11_000_000_00000) >> 5)
-                   | ((address & 0b000_00_000_111_00000) >> 2)
-                   | ((address & 0b000_00_111_000_00000) >> 8);
+            var (cx, py) = ArcaneUtil.GetPixelCoordinates(address);
             var cy = py >> 3;
 
             var oldValue = pixels[cx, py];
             pixels[cx, py] = newValue;
 
-            var attr = colors[cx, cy];
-            var foreground = Colors.ForegroundIndex(attr);
-            var background = Colors.BackgroundIndex(attr);
+            var attr = attrs[cx, cy];
+            var foreground = ArcaneUtil.GetInk16(attr);
+            var background = ArcaneUtil.GetPaper16(attr);
             if (attr.IsBit7Set() && flashInverted) {
                 (foreground, background) = (background, foreground);
             }
@@ -117,18 +91,16 @@ namespace Casper {
         }
 
         void UpdateColors(int address, byte attr) {
-            var cx = (address & 0b000000_00000_11111);
-            var cy = (address & 0b000000_11111_00000) >> 5;
-
-            colors[cx, cy] = attr;
+            var (cx, cy) = ArcaneUtil.GetAttrCoordinates(address);
+            attrs[cx, cy] = attr;
 
             RenderAttr(cx, cy, attr);
         }
 
         void RenderAttr(int cx, int cy, byte attr) {
-            var foreground = Colors.ForegroundIndex(attr);
-            var background = Colors.BackgroundIndex(attr);
-            if (attr.IsBit7Set() && flashInverted) {
+            var foreground = ArcaneUtil.GetInk16(attr);
+            var background = ArcaneUtil.GetPaper16(attr);
+            if (ArcaneUtil.IsFlash(attr) && flashInverted) {
                 (foreground, background) = (background, foreground);
             }
 

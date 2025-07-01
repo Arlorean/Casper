@@ -47,7 +47,7 @@ namespace Casper.Forms {
 
             InitializeController();
 
-            spectrum.LoadROM(Resources.Get(Shared.Resources.Assembly, @"Resources\Spectrum.rom"));
+            spectrum.LoadROM(Resources.Get(Shared.Resources.Assembly, @"Resources\Roms\48.rom"));
             spectrum.Load(new FileFormats.Tap(Resources.Get(Shared.Resources.Assembly, @"Resources\Games\ManicMiner.tap")));
             Running = true;
         }
